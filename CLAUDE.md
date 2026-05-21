@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクトの現状
 
-このリポジトリは **Create Next App のボイラープレートそのまま**の状態（`src/app/page.tsx` 等はテンプレート）。アプリ本体はまだ実装されていない。
+「ほほ笑みラボ（PC・スマホ教室）のシニア生徒向け、教室内LANで動く初心者ファーストの4人麻雀ゲーム」。**`REQUIREMENTS.md` が設計の唯一の信頼できる情報源（source of truth）**。実装は `REQUIREMENTS.md`「8. 開発ロードマップ」のフェーズ順（ロジック土台 → 役判定・点数 → ローカル4人対戦 → シニア向け仕上げ）に沿う。
 
-**`REQUIREMENTS.md` が設計の唯一の信頼できる情報源（source of truth）**。概要は「ほほ笑みラボ（PC・スマホ教室）のシニア生徒向け、教室内LANで動く初心者ファーストの4人麻雀ゲーム」。実装は `REQUIREMENTS.md`「8. 開発ロードマップ」のフェーズ順（ロジック土台 → 役判定・点数 → ローカル4人対戦 → シニア向け仕上げ）に沿う。
+**進捗はチケット単位で `docs/00-index.md` の状態欄を参照（常に最新の真実）。** 現時点のスナップショット: 基盤整備（#01）とゲームロジックの牌定義（#02 `src/lib/mahjong/tiles.ts`）まで完了。次の着手候補は #03（山牌・配牌）。`src/app/page.tsx` などUIページはまだ Create Next App のテンプレートのまま。
 
 ## チケット / タスク管理（docs/）
 

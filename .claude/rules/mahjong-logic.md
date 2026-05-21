@@ -16,6 +16,15 @@ paths:
 - 標準34種136枚。内部表現は `m1`〜`m9`（萬子）/ `p1`〜`p9`（筒子）/ `s1`〜`s9`（索子）/ 字牌 `z1`東 `z2`南 `z3`西 `z4`北 `z5`白 `z6`發 `z7`中。
 - 命名は `public/tiles/` のSVG（`back` 含む）と一致させる（REQUIREMENTS.md §5.5）。
 
+## 実装済みモジュール（再利用すること・再定義しない）
+- **`tiles.ts`（#02 完了）** が牌まわりの単一の出所。新規ロジック（#03〜#09）はここから import する。
+  - 型: `Tile`（`m1`..`z7`）/ `Suit` / `NumberSuit` / `Honor`
+  - 定数: `ALL_TILES`(34種・正準順) / `ALL_136`(各4枚=136) / `TILE_COUNT` / `TILES_PER_KIND`
+  - 抽出・述語: `suitOf` `rankOf` `isHonor` `isNumber` `isTerminal` `isTerminalOrHonor` `isSimple` `isWind` `isDragon`
+  - ソート・index: `compareTiles` / `sortTiles`（非破壊）/ `tileToIndex` / `tileFromIndex`（0-33）。**シャンテンの counts[34] バケットはこの index を使う**（並び順＝index順＝ソート順）。
+  - 表示名: `tileName` / `TILE_NAMES`（漢数字＋読み仮名）
+  - ドラ: `doraFromIndicator`（表ドラのみ。風 z1→…→z4→z1 と 三元 z5→z6→z7→z5 は別サイクル）
+
 ## ルールのスコープ（フェーズ1限定）
 - 鳴きあり（ポン・チー・カン）、リーチあり（1000点供託）、**1ゲーム=1局のみ**（連荘・本場なし）、親は開始時ランダム、持ち点25,000スタート。
 - **実装する役のみ**：リーチ / ツモ（門前清自摸和）/ ピンフ / タンヤオ / 役牌（白發中・自風・場風）/ 一盃口 / 三色同順 / 一気通貫 / トイトイ / 七対子 / ホンイツ / チンイツ。食い下がりは仕様どおり。**ドラは表ドラのみ**。
