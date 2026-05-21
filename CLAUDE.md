@@ -25,13 +25,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## コマンド
 
 ```bash
-npm run dev     # 開発サーバー（Turbopack）http://localhost:3000
-npm run build   # 本番ビルド（Turbopack）
-npm run start   # ビルド済みアプリの起動
-npm run lint    # ESLint
+npm run dev           # 開発サーバー（Turbopack）http://localhost:3000
+npm run build         # 本番ビルド（Turbopack）
+npm run start         # ビルド済みアプリの起動
+npm run lint          # ESLint
+npm run test          # Vitest（一発実行）
+npm run test:watch    # Vitest ウォッチ
+npm run test:coverage # カバレッジ（v8, src/lib/** 対象）
 ```
 
-- **テストランナーは未導入**。役判定の網羅的単体テストが必要なため、フェーズ2前にテスト基盤（Vitest 推奨）を導入し、`npm run test` と単一テスト実行コマンドをここへ追記する。
+- 単一テスト実行: `npx vitest run path/to/file.test.ts` または `npx vitest run -t "<テスト名>"`。
+- テストは純粋TSロジック中心で `environment: 'node'`。`@/*` エイリアスは Vite ネイティブ解決（`vitest.config.ts`）。UIコンポーネントのテストが要るときに jsdom + Testing Library を追加する。
 
 ## アーキテクチャ原則（常時）
 
@@ -48,7 +52,7 @@ npm run lint    # ESLint
 - **Tailwind CSS は v3（3.4.17）**。v4 から意図的にダウングレード済み（`tailwind.config.ts` + `postcss.config.mjs` 構成）。v4 のインライン設定は使わない。
 - **Turbopack を dev・build 両方で使用**。
 - TypeScript `strict: true`。パスエイリアス `@/*` → `./src/*`。
-- **Zustand / Socket.io は未インストール**（`REQUIREMENTS.md` 指定。利用開始時に追加）。
+- 主要ライブラリ導入済み: Zustand（状態）/ Socket.io（通信）/ qrcode / lucide-react / Vitest（テスト）。日本語フォントは BIZ UDPGothic（CSS変数 `--font-jp-sans`）。
 
 ## ルールの所在（.claude/rules/ — path-scoped で自動ロード）
 

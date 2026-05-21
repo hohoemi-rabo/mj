@@ -13,8 +13,23 @@ export default {
         foreground: "var(--foreground)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        sans: ["var(--font-jp-sans)", "system-ui", "sans-serif"],
+      },
+      fontSize: {
+        // シニア向けに大きめ・行高広め
+        base: ["1.125rem", { lineHeight: "1.8" }],
+        lg: ["1.375rem", { lineHeight: "1.7" }],
+        xl: ["1.75rem", { lineHeight: "1.5" }],
+      },
+      // タップ領域 60×60px（REQUIREMENTS §3.7）。min-h-tap / min-w-tap で使う
+      spacing: {
+        tap: "60px",
+      },
+      minHeight: {
+        tap: "60px",
+      },
+      minWidth: {
+        tap: "60px",
       },
     },
   },

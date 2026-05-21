@@ -21,12 +21,18 @@
 - `tailwindcss` は **v3 系のまま**（v4化しない / CLAUDE.md 参照）。
 
 ## Todo
-- [ ] `zustand` / `socket.io` / `socket.io-client` / `qrcode` / `lucide-react` を追加
-- [ ] Vitest を導入し `npm run test`（および watch / coverage）スクリプトを追加
-- [ ] `layout.tsx` を `lang="ja"`・適切な `metadata` に修正
-- [ ] 日本語フォントを `next/font` で設定し `Geist` を置換
-- [ ] シニア向けデザイントークン（フォントサイズ・コントラスト・タップ領域）を Tailwind に定義
-- [ ] `npm run dev` / `lint` / `test` が通ることを確認
+- [x] `zustand` / `socket.io` / `socket.io-client` / `qrcode` / `lucide-react` を追加
+- [x] Vitest を導入し `npm run test`（および watch / coverage）スクリプトを追加
+- [x] `layout.tsx` を `lang="ja"`・適切な `metadata` に修正
+- [x] 日本語フォントを `next/font` で設定し `Geist` を置換
+- [x] シニア向けデザイントークン（フォントサイズ・コントラスト・タップ領域）を Tailwind に定義
+- [x] `npm run dev` / `lint` / `test` が通ることを確認
+
+## 実装メモ
+- 日本語フォントは **BIZ UDPGothic**（UDフォント・視認性優先）を CSS変数 `--font-jp-sans` で配線。アプリ名は **ほほ笑み麻雀**。
+- `@/*` エイリアスのテスト解決は `vite-tsconfig-paths` ではなく **Vite ネイティブの `resolve.tsconfigPaths`** を使用（依存を1つ削減）。
+- `src/lib/__smoke__.ts` / `__smoke__.test.ts` は暫定スモーク。`src/lib/mahjong` の実テストが入ったら削除する（docs/02 以降）。
+- 既知の npm audit（moderate×2）は Next.js 同梱の `postcss` 由来。`audit fix --force` は Next を v9 へ破壊的ダウングレードするため**適用しない**。
 
 ## 完了条件
 - `npm install` 後に `dev`・`lint`・`test` がエラーなく動く。
