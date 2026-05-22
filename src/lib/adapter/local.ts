@@ -44,7 +44,7 @@ export class LocalAdapter implements MahjongAdapter {
     return new Promise((resolve, reject) => {
       this.s.emit("room:create", { name: hostName }, (res: SeatAssignment | AdapterError) => {
         if ("roomId" in res) resolve(res);
-        else reject(new Error(res.message));
+        else reject(res); // AdapterError をそのまま（code を保持）
       });
     });
   }
@@ -53,7 +53,7 @@ export class LocalAdapter implements MahjongAdapter {
     return new Promise((resolve, reject) => {
       this.s.emit("room:join", { passcode, name }, (res: SeatAssignment | AdapterError) => {
         if ("roomId" in res) resolve(res);
-        else reject(new Error(res.message));
+        else reject(res);
       });
     });
   }
@@ -62,7 +62,7 @@ export class LocalAdapter implements MahjongAdapter {
     return new Promise((resolve, reject) => {
       this.s.emit("game:start", { opts }, (res: { ok: true } | AdapterError) => {
         if ("ok" in res) resolve();
-        else reject(new Error(res.message));
+        else reject(res);
       });
     });
   }
