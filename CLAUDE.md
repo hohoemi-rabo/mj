@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 「ほほ笑みラボ（PC・スマホ教室）のシニア生徒向け、教室内LANで動く初心者ファーストの4人麻雀ゲーム」。**`REQUIREMENTS.md` が設計の唯一の信頼できる情報源（source of truth）**。実装は `REQUIREMENTS.md`「8. 開発ロードマップ」のフェーズ順（ロジック土台 → 役判定・点数 → ローカル4人対戦 → シニア向け仕上げ）に沿う。
 
-**進捗はチケット単位で `docs/00-index.md` の状態欄を参照（常に最新の真実）。** 現時点のスナップショット: 基盤整備（#01）とゲームロジックの牌定義（#02 `src/lib/mahjong/tiles.ts`）まで完了。次の着手候補は #03（山牌・配牌）。`src/app/page.tsx` などUIページはまだ Create Next App のテンプレートのまま。
+**進捗はチケット単位で `docs/00-index.md` の状態欄を参照（常に最新の真実）。** 現時点のスナップショット: 基盤整備（#01）＋**ゲームロジック層 #02〜#08 完了**（牌`tiles` / 山`wall` / 手牌`hand` / シャンテン`shanten` / 役`yaku`(符込み) / 点数`score` / 進行ステートマシン`state`、すべて `src/lib/mahjong/` 純粋TS・テスト180件）。次の着手候補は #09（CPU思考、`state.legalActions` 駆動）。`src/app/page.tsx` などUIページはまだ Create Next App のテンプレートのまま。
 
 ## チケット / タスク管理（docs/）
 
