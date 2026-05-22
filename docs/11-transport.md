@@ -22,14 +22,24 @@
 - 4桁合言葉での入室制限（§2.2, §4.4）。
 
 ## Todo
-- [ ] Adapter 共通インターフェース（`types.ts`）
-- [ ] `server.ts`（Next.js + Socket.io 同居）
-- [ ] `dev`/`start` スクリプトをカスタムサーバー対応に変更
-- [ ] §6.3 の各イベントのハンドラ実装
-- [ ] サーバー権威で #08 のステートマシンを駆動し `game:state` を配信
-- [ ] 4桁合言葉の入室制限
-- [ ] `RemoteAdapter` スタブ（将来用）
-- [ ] LAN内の実機（複数端末）で疎通確認
+- [x] Adapter 共通インターフェース（`types.ts`）
+- [x] `server.ts`（Next.js + Socket.io 同居）
+- [x] `dev`/`start` スクリプトをカスタムサーバー対応に変更
+- [x] §6.3 の各イベントのハンドラ実装
+- [x] サーバー権威で #08 のステートマシンを駆動し `game:state` を配信
+- [x] 4桁合言葉の入室制限
+- [x] `RemoteAdapter` スタブ（将来用）
+- [ ] LAN内の実機（複数端末）で疎通確認（UI #14/#15 到達後に手動）
+
+## 実装メモ
+- **純粋セッションコアを分離**: `src/lib/server/session.ts` の `RoomStore`（socket/next 非依存）。部屋・席・合言葉・ゲーム進行・サーバー権威を持ち、vitest で網羅テスト（`session.test.ts` 16件）。`server.ts` はその薄いグルー。
+- `RoomStore`: `createRoom`(host=席0)/`joinRoom`(席0→3・満席/誤合言葉/開始後/空名はエラー)/`fillWithCpu`(空席CPU化・冪等)/`startGame`(seed→`createInitialState`→自動ツモ整定)/`applyPlayerAction`(**`validate` で不正拒否＝サーバー権威**・席はサーバー束縛・自動ツモ整定)/`advanceAuto`(CPU席を進め人間席で停止・rng注入)/`getPlayers`/`getState`/`removeRoom`。結果は `Result<T>={ok,value}|{ok:false,error}`。
+- **合言葉**: 4桁ゼロ詰め・衝突回避・`getPlayers/getState` に漏らさない（列挙防止のため未存在も WRONG_PASSCODE）。
+- **自動ツモ**: `awaiting-draw` をサーバーが消化（`player:draw` は無視）。シニアは常に「打牌」だけ選ぶ。
+- **クライアント Adapter**: `src/lib/adapter/types.ts`（`MahjongAdapter`＋ペイロード型）/`local.ts`（`socket.io-client` 実装）/`remote.ts`（将来クラウド用スタブ）。自分の合法手はクライアントが `legalActions(state, mySeat)` をローカル計算（payload は完全な `GameState` のみ）。エラーイベントは予約衝突回避で `app:error`。
+- **カスタムサーバー** `server.ts`: `next({dev,turbopack:dev})`（**dev でも Turbopack 維持**・型は `turbopack?:boolean` を確認済み）＋`socket.io`。§6.3 イベント→`RoomStore`→`game:state`/`game:end` 配信。CPUの思考遅延(1〜3秒)・再接続は #16。
+- 起動: `tsx`（devDep 追加）。`dev`=`tsx watch server.ts` / `start`=`NODE_ENV=production tsx server.ts` / `build`=`next build --turbopack`（不変）。tsx は tsconfig paths(`@/*`) を解決（確認済み）。
+- 残: 実機LAN複数端末は UI（#15 入室・#14 対局）到達後に手動疎通。
 
 ## 完了条件
 - 同一LANの複数端末が合言葉で同じ部屋に入り、サーバー権威で状態同期しながら1局打てる。
