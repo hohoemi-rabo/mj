@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 「ほほ笑みラボ（PC・スマホ教室）のシニア生徒向け、教室内LANで動く初心者ファーストの4人麻雀ゲーム」。**`REQUIREMENTS.md` が設計の唯一の信頼できる情報源（source of truth）**。実装は `REQUIREMENTS.md`「8. 開発ロードマップ」のフェーズ順（ロジック土台 → 役判定・点数 → ローカル4人対戦 → シニア向け仕上げ）に沿う。
 
-**進捗はチケット単位で `docs/00-index.md` の状態欄を参照（常に最新の真実）。** 現時点のスナップショット: 基盤整備（#01）＋**ゲームロジック層 #02〜#09 完了**（`src/lib/mahjong/` 純粋TS）＋**#10 SVG牌素材**（`public/tiles/` 35枚・`src/lib/tileAsset.ts`）＋**#11 通信層**（カスタムサーバー `server.ts`・純粋セッションコア `src/lib/server/session.ts`・差し替え可能 `src/lib/adapter/`）。テスト222件。次は UI（#13 UI基盤・#14 対局画面・#15 入室）と #12 ストア／#16 信頼性。**`src/app/page.tsx` などUIページはまだ Create Next App のテンプレートのまま**（実機LAN疎通は UI 到達後に確認）。
+**進捗はチケット単位で `docs/00-index.md` の状態欄を参照（常に最新の真実）。** 現時点のスナップショット: **#01〜#12 完了**＝基盤（#01）＋ゲームロジック層 #02〜#09（`src/lib/mahjong/` 純粋TS）＋#10 SVG牌素材（`public/tiles/` 35枚・`src/lib/tileAsset.ts`）＋#11 通信層（カスタムサーバー `server.ts`・純粋セッションコア `src/lib/server/session.ts`・差し替え可能 `src/lib/adapter/`）＋#12 状態管理（`src/lib/store/` gameStore/settingsStore/selectors）。テスト235件。**次は UI 実装に着手**（#13 UI基盤 →#14 対局画面 →#15 入室、後で #16 信頼性・#17〜#19 仕上げ）。**`src/app/*.tsx` はまだ Create Next App のテンプレートのまま**＝ここから実画面コードに入る（`senior-ui`/`nextjs-app-router` ルール適用。見た目はブラウザ目視確認が必要、`npm run dev` はカスタムサーバー起動）。実機LAN疎通は #14/#15 到達後に確認。
 
 ## チケット / タスク管理（docs/）
 
