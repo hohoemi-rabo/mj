@@ -18,12 +18,20 @@
 - 純粋関数 + 不変データ構造を基本とする。
 
 ## Todo
-- [ ] シード可能なシャッフル
-- [ ] 山の生成（王牌・ドラ表示牌の確保）
-- [ ] 配牌（4人×13枚）
-- [ ] ツモ／嶺上ツモ／残数管理
-- [ ] ドラ表示牌の公開と #02 のドラ変換連携
-- [ ] 単体テスト（シード固定で決定的に検証）
+- [x] シード可能なシャッフル
+- [x] 山の生成（王牌・ドラ表示牌の確保）
+- [x] 配牌（4人×13枚）
+- [x] ツモ／嶺上ツモ／残数管理
+- [x] ドラ表示牌の公開と #02 のドラ変換連携
+- [x] 単体テスト（シード固定で決定的に検証）
+
+## 実装メモ
+- `src/lib/mahjong/wall.ts`。山を「シャッフル済み136枚の不変配列＋インデックスポインタ」で表現（`Wall` はメソッドを持たないプレーンオブジェクト＝ #11 の `game:state` 同期でそのままシリアライズ可能）。
+- 牌の配置: `tiles[0, liveEnd)`＝山 / `tiles[liveEnd, 136)`＝王牌14枚。ドラ表示牌は配牌時に王牌先頭 `tiles[122]` を公開（**表ドラのみ・カンドラなし**）。嶺上牌は末尾4枚で k回目のカンが `tiles[135-k]`。
+- **カン時の海底後退**: `drawRinshan` は嶺上牌を1枚引くと同時に `liveEnd--`。これでカン回数 k に関係なく総ツモ数は常に70（通常 70-k ＋ 嶺上 k）＝本格リーチ麻雀と一致。
+- 乱数は mulberry32（`createRng(seed)`）＋非破壊 Fisher–Yates（`shuffle`）。`tiles.ts` の `ALL_136`/`sortTiles`/`doraFromIndicator` を再利用。
+- 公開API: 定数（`TILE_TOTAL` `DEAD_WALL_SIZE` `LIVE_WALL_SIZE` `HAND_SIZE` `PLAYER_COUNT` `RINSHAN_MAX`）/ `createRng` `shuffle` / `buildWall` `deal` `draw` `drawRinshan` / `remainingDraws` `isExhausted` `currentDora` `deadWall`。流局後ツモ・嶺上切れ・二重配牌は例外で早期検出（合法手の事前判定は #08 の責務）。
+- `wall.test.ts` でシード固定の決定的検証（RNG/シャッフル・配牌一致・枚数整合・ツモ順・海底後退・総ツモ数不変・ドラ変換）。
 
 ## 完了条件
 - 同一シードで常に同じ配牌・ツモ順になる。枚数の整合（136＝手牌＋河＋山＋王牌）がテストで保証される。
