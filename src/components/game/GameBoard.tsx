@@ -47,6 +47,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
   const mySeat = useGameStore((s) => s.mySeat);
   const legal = useGameStore((s) => s.myLegalActions);
   const players = useGameStore((s) => s.players);
+  const connection = useGameStore((s) => s.connection);
   const send = useGameStore((s) => s.send);
 
   const discardConfirm = useSettingsStore((s) => s.discardConfirm);
@@ -203,6 +204,17 @@ export function GameBoard({ roomId }: { roomId: string }) {
         onConfirm={() => discardTarget && doDiscard(discardTarget)}
         onCancel={() => setDiscardTarget(null)}
       />
+
+      {/* 接続状態バナー（通信断→再接続中）。再接続で自動的に消える（#16）。 */}
+      {connection !== "connected" && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed left-1/2 top-2 z-40 -translate-x-1/2 rounded-xl bg-danger px-6 py-2 text-base font-bold text-white shadow-2xl"
+        >
+          接続が切れました。再接続しています…
+        </div>
+      )}
 
       {/* 「待って」（自手番のみ・ローカル一時停止） */}
       <WaitButton visible={current === seat} />

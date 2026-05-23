@@ -211,3 +211,77 @@ describe("後始末", () => {
     if (!r.ok) expect(r.error.code).toBe("ROOM_NOT_FOUND");
   });
 });
+
+describe("切断/再接続（#16）", () => {
+  const connectedOf = (store: RoomStore, roomId: string, seat: Seat): boolean | undefined =>
+    store.getPlayers(roomId).find((p) => p.seat === seat)?.connected;
+
+  it("切断で connected=false・正トークン再接続で復元・誤トークンは失敗", () => {
+    const store = new RoomStore();
+    const a = unwrap(store.createRoom("A"));
+    store.bindSocket(a.roomId, 0, "sA");
+    const b = unwrap(store.joinRoom(a.passcode, "B"));
+    store.bindSocket(a.roomId, b.seat, "sB");
+
+    // 切断
+    expect(store.markDisconnected("sB")).toEqual({ roomId: a.roomId, seat: b.seat });
+    expect(connectedOf(store, a.roomId, b.seat)).toBe(false);
+
+    // 誤トークンは失敗
+    expect(store.reconnect(a.roomId, b.seat, "wrong", "sB2").ok).toBe(false);
+    // 正トークンで復元
+    expect(store.reconnect(a.roomId, b.seat, b.token, "sB2").ok).toBe(true);
+    expect(connectedOf(store, a.roomId, b.seat)).toBe(true);
+  });
+
+  it("再接続後に旧 socketId の切断が来ても無視（競合回避）", () => {
+    const store = new RoomStore();
+    const a = unwrap(store.createRoom("A"));
+    const b = unwrap(store.joinRoom(a.passcode, "B"));
+    store.bindSocket(a.roomId, b.seat, "sB");
+    store.markDisconnected("sB");
+    store.reconnect(a.roomId, b.seat, b.token, "sB2"); // 新IDに束ね直し
+    // 旧IDの遅延 disconnect は該当なし
+    expect(store.markDisconnected("sB")).toBeNull();
+    expect(connectedOf(store, a.roomId, b.seat)).toBe(true);
+    // 未知 socket も null
+    expect(store.markDisconnected("unknown")).toBeNull();
+  });
+
+  it.each([1, 7])("seed=%i 切断中の人間席は CPU 代行で終局まで進む", (seed) => {
+    const store = new RoomStore();
+    const a = unwrap(store.createRoom("human"));
+    store.bindSocket(a.roomId, 0, "sA");
+    store.fillWithCpu(a.roomId, "weak");
+    unwrap(store.startGame(a.roomId, { seed }));
+    store.markDisconnected("sA"); // 人間(席0)も切断 → 全席が自動席
+    const rngs = [0, 1, 2, 3].map((i) => createRng(seed * 7 + i));
+    let guard = 0;
+    while (store.getState(a.roomId)!.phase.kind !== "ended" && guard++ < 5000) {
+      if (store.advanceAuto(a.roomId, (s) => rngs[s]) === null) break;
+    }
+    const s = store.getState(a.roomId)!;
+    expect(s.phase.kind).toBe("ended");
+    assertConservation(s);
+  });
+
+  it("stepAuto は接続中の人間の手番で停止する", () => {
+    const store = new RoomStore();
+    const a = unwrap(store.createRoom("human"));
+    store.bindSocket(a.roomId, 0, "sA");
+    store.fillWithCpu(a.roomId, "medium");
+    unwrap(store.startGame(a.roomId, { seed: 1 }));
+    const rngs = [0, 1, 2, 3].map((i) => createRng(100 + i));
+    store.advanceAuto(a.roomId, (s) => rngs[s]); // 人間(席0)まで進む
+    const next = store.stepAuto(a.roomId, (s) => rngs[s]);
+    const s = store.getState(a.roomId)!;
+    if (s.phase.kind !== "ended") {
+      expect(next.acted).toBe(false); // 人間の番なので自動では進めない
+      const la = legalActions(s, 0);
+      const hasMove =
+        la.discards.length > 0 || la.canTsumo || la.canRon || la.canPon ||
+        la.chiOptions.length > 0 || la.canMinkan || la.canPass;
+      expect(hasMove).toBe(true); // 席0の手番で止まっている
+    }
+  });
+});

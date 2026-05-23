@@ -27,6 +27,7 @@ class FakeAdapter implements MahjongAdapter {
   errorCb?: (e: AdapterError) => void;
   connCb?: (c: ConnectionStatus) => void;
   sent: PlayerAction[] = [];
+  reconnects: { roomId: string; seat: Seat; token: string }[] = [];
   createResult: SeatAssignment | AdapterError = { roomId: "r1", seat: 0, token: "t0", passcode: "1234" };
   joinResult: SeatAssignment | AdapterError = { roomId: "r1", seat: 1, token: "t1" };
 
@@ -40,6 +41,10 @@ class FakeAdapter implements MahjongAdapter {
   }
   joinRoom(): Promise<SeatAssignment> {
     return "roomId" in this.joinResult ? Promise.resolve(this.joinResult) : Promise.reject(this.joinResult);
+  }
+  reconnect(roomId: string, seat: Seat, token: string): Promise<void> {
+    this.reconnects.push({ roomId, seat, token });
+    return Promise.resolve();
   }
   start(_opts?: StartOptions): Promise<void> {
     return Promise.resolve();
@@ -108,6 +113,15 @@ describe("gameStore: 接続・部屋", () => {
     expect(s.mySeat).toBe(1);
     expect(s.roomId).toBe("r1");
     expect(s.passcode).toBeNull();
+  });
+
+  it("通信断復帰(connected 再発火)でトークン再接続を発火・初回は発火しない（#16）", async () => {
+    const fake = new FakeAdapter();
+    await useGameStore.getState().connect(fake); // 初回 connected（roomId=null）
+    expect(fake.reconnects).toHaveLength(0);
+    await useGameStore.getState().createRoom("A"); // roomId/mySeat/myToken セット
+    fake.connCb!("connected"); // 通信断からの再接続を模擬
+    expect(fake.reconnects).toEqual([{ roomId: "r1", seat: 0, token: "t0" }]);
   });
 });
 

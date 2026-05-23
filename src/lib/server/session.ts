@@ -172,31 +172,90 @@ export class RoomStore {
     return ok(room.state);
   }
 
-  /** 現アクション席がCPU/自動の間だけ進める（人間席・終局で停止）。rng は注入。 */
-  advanceAuto(roomId: RoomId, rngFor: (seat: Seat) => Rng): GameState | null {
+  /**
+   * 自動席（CPU、または切断中の人間＝CPU代行）の「次の一手」だけ進める。rng は注入。
+   * 接続中の人間の手番・終局・該当なしは acted:false（停止）。一手ずつの思考演出に使う（#16）。
+   */
+  stepAuto(roomId: RoomId, rngFor: (seat: Seat) => Rng): { state: GameState | null; acted: boolean } {
     const room = this.rooms.get(roomId);
-    if (!room?.state) return null;
-    let state = room.state;
+    if (!room?.state) return { state: null, acted: false };
+    // 念のため awaiting-draw を解消（通常は settle 済み）。
+    if (room.state.phase.kind === "awaiting-draw") room.state = settle(room.state);
+    const state = room.state;
+    if (state.phase.kind === "ended") return { state, acted: false };
+    const seat = actorSeat(state);
+    if (seat === null) return { state, acted: false };
+    const slot = room.seats[seat];
+    const auto = !!slot && (slot.isCpu || !slot.connected); // 切断中の人間は CPU が代行
+    if (!auto) return { state, acted: false }; // 接続中の人間の手番で停止
+    const action = chooseAction(slot.cpuStrength ?? DEFAULT_CPU, state, seat, rngFor(seat));
+    const next = settle(reducer(state, action));
+    if (next === state) return { state, acted: false }; // 進まない（保険）
+    room.state = next;
+    return { state: next, acted: true };
+  }
+
+  /** 自動席が続く限りまとめて進める（接続中の人間席・終局で停止）。最終 state を返す（無進行は null）。 */
+  advanceAuto(roomId: RoomId, rngFor: (seat: Seat) => Rng): GameState | null {
     let advanced = false;
     let guard = 0;
-    while (state.phase.kind !== "ended" && guard++ < 2000) {
-      if (state.phase.kind === "awaiting-draw") {
-        state = reducer(state, { type: "draw" });
-        advanced = true;
-        continue;
-      }
-      const seat = actorSeat(state);
-      if (seat === null) break;
-      const slot = room.seats[seat];
-      if (!slot || !slot.isCpu) break; // 人間の手番で停止
-      const action = chooseAction(slot.cpuStrength ?? DEFAULT_CPU, state, seat, rngFor(seat));
-      const next = reducer(state, action);
-      if (next === state) break; // 進まない（保険）
-      state = next;
+    while (guard++ < 3000) {
+      const r = this.stepAuto(roomId, rngFor);
+      if (!r.acted) break;
       advanced = true;
     }
-    room.state = state;
-    return advanced ? state : null;
+    return advanced ? (this.rooms.get(roomId)?.state ?? null) : null;
+  }
+
+  // --- 切断/再接続（#16） ---
+
+  /** socket を席に束ねる（create/join/reconnect 後）。connected=true にする。 */
+  bindSocket(roomId: RoomId, seat: Seat, socketId: string): void {
+    const slot = this.rooms.get(roomId)?.seats[seat];
+    if (!slot) return;
+    slot.socketId = socketId;
+    slot.connected = true;
+  }
+
+  /**
+   * socket 切断を反映し、該当席を connected=false にして {roomId,seat} を返す（無ければ null）。
+   * socketId 一致のときだけ落とす＝再接続で別IDに束ね直し済みなら旧切断は無視（競合回避）。
+   */
+  markDisconnected(socketId: string): { roomId: RoomId; seat: Seat } | null {
+    for (const room of this.rooms.values()) {
+      for (const seat of SEATS) {
+        const slot = room.seats[seat];
+        if (slot && slot.socketId === socketId) {
+          slot.connected = false;
+          slot.socketId = null;
+          return { roomId: room.roomId, seat };
+        }
+      }
+    }
+    return null;
+  }
+
+  /** トークンが一致する席を返す（再接続検証の補助）。 */
+  findSeatByToken(roomId: RoomId, token: ClientToken): Seat | null {
+    const room = this.rooms.get(roomId);
+    if (!room) return null;
+    return SEATS.find((s) => room.seats[s]?.token === token) ?? null;
+  }
+
+  /** 再接続。token 検証のうえ席を再束縛し、現在の state を返す（未開始なら null）。 */
+  reconnect(
+    roomId: RoomId,
+    seat: Seat,
+    token: ClientToken,
+    socketId: string,
+  ): Result<GameState | null> {
+    const room = this.rooms.get(roomId);
+    if (!room) return err("ROOM_NOT_FOUND");
+    const slot = room.seats[seat];
+    if (!slot || slot.token !== token) return err("ROOM_NOT_FOUND"); // 不一致は安全側で丸める（列挙防止）
+    slot.connected = true;
+    slot.socketId = socketId;
+    return ok(room.state);
   }
 
   getPlayers(roomId: RoomId): readonly PlayerInfo[] {

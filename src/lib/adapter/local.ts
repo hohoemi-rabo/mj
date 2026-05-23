@@ -3,14 +3,16 @@
 // （送信→次の game:state で反映）。
 
 import { type Socket, io } from "socket.io-client";
-import type { GameState } from "@/lib/mahjong/state";
+import type { GameState, Seat } from "@/lib/mahjong/state";
 import type {
   AdapterError,
+  ClientToken,
   ConnectionStatus,
   MahjongAdapter,
   Passcode,
   PlayerAction,
   PlayerInfo,
+  RoomId,
   SeatAssignment,
   StartOptions,
   Unsubscribe,
@@ -71,6 +73,15 @@ export class LocalAdapter implements MahjongAdapter {
     return new Promise((resolve, reject) => {
       this.s.emit("room:join", { passcode, name }, (res: SeatAssignment | AdapterError) => {
         if ("roomId" in res) resolve(res);
+        else reject(res);
+      });
+    });
+  }
+
+  reconnect(roomId: RoomId, seat: Seat, token: ClientToken): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.s.emit("room:reconnect", { roomId, seat, token }, (res: { ok: true } | AdapterError) => {
+        if ("ok" in res) resolve();
         else reject(res);
       });
     });

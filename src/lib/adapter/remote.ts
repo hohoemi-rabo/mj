@@ -1,14 +1,16 @@
 // RemoteAdapter: 将来のクラウド対戦用スタブ（docs/11）。MahjongAdapter が通信非依存で
 // あることを示すための骨組み。実装は将来チケットで（現状は全メソッドが未実装エラー）。
 
-import type { GameState } from "@/lib/mahjong/state";
+import type { GameState, Seat } from "@/lib/mahjong/state";
 import type {
   AdapterError,
+  ClientToken,
   ConnectionStatus,
   MahjongAdapter,
   Passcode,
   PlayerAction,
   PlayerInfo,
+  RoomId,
   SeatAssignment,
   StartOptions,
   Unsubscribe,
@@ -27,6 +29,9 @@ export class RemoteAdapter implements MahjongAdapter {
     throw new Error(NOT_IMPLEMENTED);
   }
   joinRoom(_passcode: Passcode, _name: string): Promise<SeatAssignment> {
+    throw new Error(NOT_IMPLEMENTED);
+  }
+  reconnect(_roomId: RoomId, _seat: Seat, _token: ClientToken): Promise<void> {
     throw new Error(NOT_IMPLEMENTED);
   }
   start(_opts?: StartOptions): Promise<void> {

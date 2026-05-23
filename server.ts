@@ -11,7 +11,7 @@ import { Server, type Socket } from "socket.io";
 import { type GameAction, type Seat } from "@/lib/mahjong/state";
 import { type Rng, createRng } from "@/lib/mahjong/wall";
 import { RoomStore } from "@/lib/server/session";
-import type { RoomId, StartOptions } from "@/lib/adapter/types";
+import type { ClientToken, RoomId, StartOptions } from "@/lib/adapter/types";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);
@@ -48,24 +48,39 @@ app.prepare().then(() => {
   const httpServer = createServer((req, res) => handle(req, res));
   const io = new Server(httpServer);
 
+  const broadcast = (roomId: RoomId): void => {
+    const state = store.getState(roomId);
+    if (!state) return;
+    io.to(roomId).emit("game:state", state);
+    if (state.phase.kind === "ended") io.to(roomId).emit("game:end", state);
+  };
+
+  // CPUの思考演出の間（ms）。CPU_DELAY_MS env で上書き（テスト/開発は 0）。既定 0.8〜1.8s（§3.4）。
+  const cpuDelay = (): number => {
+    const env = Number(process.env.CPU_DELAY_MS);
+    return Number.isFinite(env) ? env : 800 + Math.floor(Math.random() * 1000);
+  };
+
+  // 自動席（CPU・切断中の人間＝代行）の手を一手ずつ遅延配信する（1room1チェイン・多重起動ガード）。
+  const driveTimers = new Map<RoomId, NodeJS.Timeout>();
+  const driveAutoTimed = (roomId: RoomId): void => {
+    if (driveTimers.has(roomId)) return;
+    const tick = (): void => {
+      driveTimers.delete(roomId);
+      const r = store.stepAuto(roomId, rngFor(roomId));
+      if (!r.acted || !r.state) return; // 接続中の人間の手番 / 終局 / 該当なしで停止
+      io.to(roomId).emit("game:state", r.state);
+      if (r.state.phase.kind === "ended") {
+        io.to(roomId).emit("game:end", r.state);
+        return;
+      }
+      driveTimers.set(roomId, setTimeout(tick, cpuDelay()));
+    };
+    driveTimers.set(roomId, setTimeout(tick, cpuDelay()));
+  };
+
   io.on("connection", (socket: Socket) => {
     const data = socket.data as SocketData;
-
-    const broadcast = (roomId: RoomId): void => {
-      const state = store.getState(roomId);
-      if (!state) return;
-      io.to(roomId).emit("game:state", state);
-      if (state.phase.kind === "ended") io.to(roomId).emit("game:end", state);
-    };
-
-    // 現アクション席がCPUの間だけ進めて配信（演出遅延は #16）。
-    const driveAuto = (roomId: RoomId): void => {
-      const next = store.advanceAuto(roomId, rngFor(roomId));
-      if (next) {
-        io.to(roomId).emit("game:state", next);
-        if (next.phase.kind === "ended") io.to(roomId).emit("game:end", next);
-      }
-    };
 
     const applyAndBroadcast = (action: GameAction): void => {
       if (data.roomId === undefined || data.seat === undefined) return;
@@ -74,8 +89,8 @@ app.prepare().then(() => {
         socket.emit("app:error", res.error);
         return;
       }
-      broadcast(data.roomId);
-      if (res.value.phase.kind !== "ended") driveAuto(data.roomId);
+      broadcast(data.roomId); // 人間の手は即時反映
+      if (res.value.phase.kind !== "ended") driveAutoTimed(data.roomId); // CPUは一手ずつ遅延
     };
 
     socket.on("room:create", ({ name }: { name: string }, ack?: (res: unknown) => void) => {
@@ -83,6 +98,7 @@ app.prepare().then(() => {
       if (!res.ok) { ack?.(res.error); return; }
       data.roomId = res.value.roomId;
       data.seat = res.value.seat;
+      store.bindSocket(res.value.roomId, res.value.seat, socket.id); // #16 席に socket を束ねる
       socket.join(res.value.roomId);
       ack?.(res.value); // {roomId, passcode, seat, token}
       io.to(res.value.roomId).emit("room:players", store.getPlayers(res.value.roomId));
@@ -93,10 +109,26 @@ app.prepare().then(() => {
       if (!res.ok) { ack?.(res.error); return; }
       data.roomId = res.value.roomId;
       data.seat = res.value.seat;
+      store.bindSocket(res.value.roomId, res.value.seat, socket.id);
       socket.join(res.value.roomId);
       ack?.(res.value);
       io.to(res.value.roomId).emit("room:players", store.getPlayers(res.value.roomId));
     });
+
+    // #16 通信断からの再接続: トークンで席を再束縛し、現状態を復元配信。
+    socket.on(
+      "room:reconnect",
+      ({ roomId, seat, token }: { roomId: RoomId; seat: Seat; token: ClientToken }, ack?: (res: unknown) => void) => {
+        const res = store.reconnect(roomId, seat, token, socket.id);
+        if (!res.ok) { ack?.(res.error); return; }
+        data.roomId = roomId;
+        data.seat = seat;
+        socket.join(roomId);
+        ack?.({ ok: true });
+        io.to(roomId).emit("room:players", store.getPlayers(roomId));
+        broadcast(roomId); // 状態復元（再接続者を含む全員へ再送）
+      },
+    );
 
     socket.on("game:start", ({ opts }: { opts?: StartOptions }, ack?: (res: unknown) => void) => {
       if (data.roomId === undefined) { ack?.({ code: "ROOM_NOT_FOUND", message: "部屋がありません" }); return; }
@@ -107,7 +139,7 @@ app.prepare().then(() => {
       ack?.({ ok: true });
       io.to(data.roomId).emit("room:players", store.getPlayers(data.roomId));
       broadcast(data.roomId);
-      driveAuto(data.roomId);
+      driveAutoTimed(data.roomId);
     });
 
     // プレイヤーアクション（席はサーバー束縛を使う＝自己申告を信用しない）。
@@ -123,9 +155,11 @@ app.prepare().then(() => {
     socket.on("player:draw", () => { /* サーバーが自動ツモするため無視 */ });
 
     socket.on("disconnect", () => {
-      // #16: store.markDisconnected(socket.id) → room:players 再配信（席は保持して再接続）
-      if (data.roomId !== undefined) {
-        io.to(data.roomId).emit("room:players", store.getPlayers(data.roomId));
+      // #16 切断を反映（席は保持）→ 参加者再配信＋切断席が手番なら CPU 代行で進める。
+      const loc = store.markDisconnected(socket.id);
+      if (loc) {
+        io.to(loc.roomId).emit("room:players", store.getPlayers(loc.roomId));
+        driveAutoTimed(loc.roomId);
       }
     });
   });

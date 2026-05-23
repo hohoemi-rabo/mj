@@ -76,7 +76,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     unsubscribers = [];
     adapterRef = adapter;
     unsubscribers.push(
-      adapter.onConnectionChange((connection) => set({ connection })),
+      adapter.onConnectionChange((connection) => {
+        set({ connection });
+        // 通信断からの復帰時、入室済みならトークンで席を再束縛して状態復元（#16）。
+        // 初回接続は roomId=null なので発火しない＝再接続時のみ。
+        if (connection === "connected") {
+          const { roomId, mySeat, myToken } = get();
+          if (roomId && mySeat !== null && myToken) {
+            void adapter.reconnect(roomId, mySeat, myToken).catch(() => {});
+          }
+        }
+      }),
       adapter.onPlayers((players) => set({ players })),
       adapter.onState((gameState) => set({ gameState, myLegalActions: deriveLegal(gameState, get().mySeat) })),
       adapter.onEnd((gameState) => set({ gameState, myLegalActions: deriveLegal(gameState, get().mySeat) })),

@@ -66,6 +66,8 @@ export interface MahjongAdapter {
 
   createRoom(hostName: string): Promise<SeatAssignment>;
   joinRoom(passcode: Passcode, name: string): Promise<SeatAssignment>;
+  /** 通信断後の再接続で席を再束縛する（トークンで本人確認・#16）。 */
+  reconnect(roomId: RoomId, seat: Seat, token: ClientToken): Promise<void>;
   start(opts?: StartOptions): Promise<void>;
 
   /** 打牌・鳴き・和了等のプレイヤーアクション。エラーは onError 経由（fire-and-forget）。 */
