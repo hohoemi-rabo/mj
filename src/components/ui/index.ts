@@ -4,6 +4,8 @@ export { Button, buttonVariants } from "./Button";
 export type { ButtonProps, ButtonSize, ButtonVariant, ButtonVariantOptions } from "./Button";
 export { Heading } from "./Heading";
 export type { HeadingProps } from "./Heading";
+export { Input } from "./Input";
+export type { InputProps } from "./Input";
 export { Term } from "./Term";
 export type { TermProps } from "./Term";
 export { ScreenContainer } from "./ScreenContainer";

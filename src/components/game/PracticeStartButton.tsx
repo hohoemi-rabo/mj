@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
-import { LocalAdapter } from "@/lib/adapter/local";
+import { ensureConnected } from "@/lib/adapter/connect";
 import { useGameStore } from "@/lib/store/gameStore";
 
 export function PracticeStartButton() {
@@ -18,9 +18,7 @@ export function PracticeStartButton() {
     setStatus("starting");
     const store = useGameStore.getState();
     try {
-      if (store.connection !== "connected") {
-        await store.connect(new LocalAdapter());
-      }
+      await ensureConnected();
       store.clearError();
       await store.createRoom("あなた");
       const roomId = useGameStore.getState().roomId;

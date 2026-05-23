@@ -16,13 +16,20 @@ export default function Home() {
           ほほ笑みラボのシニア向け麻雀ゲームです。
         </p>
         <div className="flex flex-col items-center gap-4">
-          {/* 練習（CPU対戦）導線。みんなで対戦する入室フローは #15。 */}
+          {/* みんなで対戦（同一LAN）の2導線 */}
+          <Link href="/host" className={buttonVariants({ variant: "primary", size: "lg" })}>
+            部屋を作る
+          </Link>
+          <Link href="/join" className={buttonVariants({ variant: "primary", size: "lg" })}>
+            部屋に入る
+          </Link>
+          {/* ひとりで練習（CPU対戦） */}
           <PracticeStartButton />
           <Link
             href="/ui"
-            className={buttonVariants({ variant: "secondary", size: "lg" })}
+            className={`${buttonVariants({ variant: "ghost", size: "default" })} text-sm`}
           >
-            部品ギャラリーを見る
+            部品ギャラリー（開発用）
           </Link>
         </div>
       </div>

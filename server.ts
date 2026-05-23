@@ -5,6 +5,7 @@
 // CPUの思考遅延（1〜3秒の演出）と再接続は #16 の担当。ここでは即時に進める最小版。
 
 import { createServer } from "node:http";
+import os from "node:os";
 import next from "next";
 import { Server, type Socket } from "socket.io";
 import { type GameAction, type Seat } from "@/lib/mahjong/state";
@@ -14,8 +15,17 @@ import type { RoomId, StartOptions } from "@/lib/adapter/types";
 
 const dev = process.env.NODE_ENV !== "production";
 const port = Number(process.env.PORT ?? 3000);
+// LAN内の他端末から繋げるよう全インターフェースで待受（既定 0.0.0.0。HOST で上書き可）。
+const host = process.env.HOST ?? "0.0.0.0";
 const app = next({ dev, turbopack: dev });
 const handle = app.getRequestHandler();
+
+/** 非内部 IPv4（LANアドレス）の一覧。QR/URL 表示の手がかりにログ出力する。 */
+const lanIPv4 = (): string[] =>
+  Object.values(os.networkInterfaces())
+    .flat()
+    .filter((n): n is os.NetworkInterfaceInfo => !!n && n.family === "IPv4" && !n.internal)
+    .map((n) => n.address);
 
 const store = new RoomStore();
 const rngsByRoom = new Map<RoomId, Rng[]>();
@@ -120,7 +130,10 @@ app.prepare().then(() => {
     });
   });
 
-  httpServer.listen(port, () => {
+  httpServer.listen(port, host, () => {
     console.log(`> mahjong server: http://localhost:${port} (${dev ? "dev" : "production"})`);
+    for (const ip of lanIPv4()) {
+      console.log(`>   LAN: http://${ip}:${port}  （他端末はこのURL/QRで入室）`);
+    }
   });
 });
