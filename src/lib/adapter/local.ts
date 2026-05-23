@@ -17,27 +17,45 @@ import type {
 } from "@/lib/adapter/types";
 
 export class LocalAdapter implements MahjongAdapter {
-  private socket: Socket | null = null;
+  // autoConnect:false で構築時にソケットを用意し、connect() より前に on* を張れるようにする
+  // （gameStore は購読を登録してから connect() する＝イベント取りこぼし防止の正しい順序）。
+  // url 既定は same-origin（LAN ホストでそのまま動く）。
+  private readonly socket: Socket;
 
-  constructor(private readonly url?: string) {}
+  constructor(url?: string) {
+    this.socket = url ? io(url, { autoConnect: false }) : io({ autoConnect: false });
+  }
 
   private get s(): Socket {
-    if (!this.socket) throw new Error("LocalAdapter: connect() を先に呼んでください");
     return this.socket;
   }
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const socket = this.url ? io(this.url) : io(); // 既定は same-origin（LAN ホストでそのまま動く）
-      this.socket = socket;
-      socket.once("connect", () => resolve());
-      socket.once("connect_error", (e: Error) => reject(e));
+      if (this.socket.connected) {
+        resolve();
+        return;
+      }
+      const cleanup = () => {
+        this.socket.off("connect", onConnect);
+        this.socket.off("connect_error", onErr);
+      };
+      const onConnect = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = (e: Error) => {
+        cleanup();
+        reject(e);
+      };
+      this.socket.once("connect", onConnect);
+      this.socket.once("connect_error", onErr);
+      this.socket.connect();
     });
   }
 
   disconnect(): void {
-    this.socket?.disconnect();
-    this.socket = null;
+    this.socket.disconnect();
   }
 
   createRoom(hostName: string): Promise<SeatAssignment> {
@@ -99,25 +117,25 @@ export class LocalAdapter implements MahjongAdapter {
   onPlayers(cb: (players: readonly PlayerInfo[]) => void): Unsubscribe {
     const h = (players: readonly PlayerInfo[]) => cb(players);
     this.s.on("room:players", h);
-    return () => this.socket?.off("room:players", h);
+    return () => this.socket.off("room:players", h);
   }
 
   onState(cb: (state: GameState) => void): Unsubscribe {
     const h = (state: GameState) => cb(state);
     this.s.on("game:state", h);
-    return () => this.socket?.off("game:state", h);
+    return () => this.socket.off("game:state", h);
   }
 
   onEnd(cb: (state: GameState) => void): Unsubscribe {
     const h = (state: GameState) => cb(state);
     this.s.on("game:end", h);
-    return () => this.socket?.off("game:end", h);
+    return () => this.socket.off("game:end", h);
   }
 
   onError(cb: (err: AdapterError) => void): Unsubscribe {
     const h = (err: AdapterError) => cb(err);
     this.s.on("app:error", h); // "error" は socket.io 予約系を避ける
-    return () => this.socket?.off("app:error", h);
+    return () => this.socket.off("app:error", h);
   }
 
   onConnectionChange(cb: (status: ConnectionStatus) => void): Unsubscribe {
@@ -128,9 +146,9 @@ export class LocalAdapter implements MahjongAdapter {
     this.s.on("disconnect", onDisconnect);
     this.s.on("connect_error", onErr);
     return () => {
-      this.socket?.off("connect", onConnect);
-      this.socket?.off("disconnect", onDisconnect);
-      this.socket?.off("connect_error", onErr);
+      this.socket.off("connect", onConnect);
+      this.socket.off("disconnect", onDisconnect);
+      this.socket.off("connect_error", onErr);
     };
   }
 }
