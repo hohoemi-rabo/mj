@@ -51,8 +51,9 @@ npm run test:coverage # カバレッジ（v8, src/lib/** 対象）
 
 - **Tailwind CSS は v3（3.4.17）**。v4 から意図的にダウングレード済み（`tailwind.config.ts` + `postcss.config.mjs` 構成）。v4 のインライン設定は使わない。
 - **dev/start は カスタムサーバー `server.ts`（`tsx`）**（#11 で導入。Next.js + Socket.io 同居）。dev は `next({turbopack:dev})` で **Turbopack 維持**、build は `next build --turbopack`。`@/*` は tsx が tsconfig paths で解決。サーバー権威は `src/lib/server/session.ts`（純粋）、通信は `src/lib/adapter/`（差し替え可能）。
+- **サーバー env**: `PORT`（既定 3000）/ `HOST`（既定 `0.0.0.0`＝LAN公開。#15）/ `CPU_DELAY_MS`（CPU思考演出の間隔ms。未指定で 0.8〜1.8s ランダム、`0` で即時＝テスト向け。#16）。ホストの LAN IP は `GET /api/server-info`、dev の他端末アクセス許可は `next.config.ts` の `allowedDevOrigins`（起動時LAN IP）。
 - TypeScript `strict: true`。パスエイリアス `@/*` → `./src/*`。
-- 主要ライブラリ導入済み: Zustand（状態）/ Socket.io（通信）/ qrcode / lucide-react / Vitest（テスト）。日本語フォントは BIZ UDPGothic（CSS変数 `--font-jp-sans`）。
+- 主要ライブラリ導入済み: Zustand（状態）/ Socket.io（通信）/ qrcode / lucide-react / Vitest（テスト）/ **clsx + tailwind-merge**（クラス結合 `cn()` ＝ `src/lib/cn.ts`）。日本語フォントは BIZ UDPGothic（CSS変数 `--font-jp-sans`）。
 
 ## ルールの所在（.claude/rules/ — path-scoped で自動ロード）
 

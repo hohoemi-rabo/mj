@@ -41,5 +41,7 @@ import ServerThing from './server-thing'
 - オンデマンド無効化は Server Action 内で `revalidateTag('tag')` / `revalidatePath('/path')`（`fetch(url, { next: { tags: ['tag'] } })` でタグ付け）。
 
 ## 最適化API
-- 画像は `next/image`、フォントは `next/font`（self-host・CLS抑制）。シニア向け日本語UIなので、`next/font/google` か `next/font/local` で**日本語フォント**を設定し、`display: 'swap'` を付ける。現状の `Geist`（英字想定）は日本語表示に不向きなので差し替えを検討。
-- ページ毎の `<title>`/OG は手書き `<head>` ではなく **Metadata API**（`export const metadata` / `generateMetadata`）で。現状 `layout.tsx` は `"Create Next App"` のままなので、アプリ名・`lang="ja"` に修正する。
+- フォントは `next/font`：#13 で `layout.tsx` に **BIZ UDPGothic**（`--font-jp-sans`・`display:'swap'`）＋`lang="ja"`＋アプリ名 metadata を設定済（Create Next App テンプレは撤去済）。
+- ページ毎の `<title>` は **Metadata API**（`export const metadata`）。各ルート（`/host`・`/join`・`/room/[id]` 等）で設定済み。
+- 画像最適化は基本 `next/image` だが、**牌などの固定寸法な静的SVG（`public/tiles`）は素の `<img>`** でよい（`next/image` 未設定・最適化不要・固定寸法でCLS無し）。`Tile.tsx`/`QrCode.tsx` のその行のみ `// eslint-disable-next-line @next/next/no-img-element`。
+- 既存ルート: `/`(Server・導線)・`/host`・`/join`(`await searchParams` で `?code=`)・`/room/[id]`(`await params`)・`/api/server-info`(Route Handler・`dynamic='force-dynamic'`)・`/ui`(部品ギャラリー)。
