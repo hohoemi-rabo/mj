@@ -12,11 +12,13 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   // 高コントラスト・白文字。focus-visible リングで色覚や視力に配慮。
   primary: "bg-primary text-white hover:bg-primary-dark focus-visible:ring-primary",
   danger: "bg-danger text-white hover:bg-danger-dark focus-visible:ring-danger",
-  // 副次：淡グレー地・濃文字（背景との境界が分かるよう枠線付き）。
+  // 副次：地と文字を固定ペアで指定し、ライト/ダーク両方で高コントラストにする。
+  // （text-foreground は OS のカラースキームで反転するため、固定グレー地と組むと同化する。）
   secondary:
-    "bg-gray-100 text-foreground border-2 border-gray-400 hover:bg-gray-200 focus-visible:ring-gray-500",
-  // 控えめ：地は透明・文字色のみ。多用は避ける。
-  ghost: "bg-transparent text-foreground hover:bg-gray-100 focus-visible:ring-gray-400",
+    "bg-gray-100 text-gray-900 border-2 border-gray-400 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-50 dark:border-gray-500 dark:hover:bg-gray-600 focus-visible:ring-gray-500",
+  // 控えめ：地は透明・文字色のみ。ホバー地もカラースキームに追従させる。
+  ghost:
+    "bg-transparent text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:ring-gray-400",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

@@ -37,7 +37,8 @@ export function Toggle({
       htmlFor={labelId}
       className={cn(
         "flex min-h-tap cursor-pointer items-center justify-between gap-4 rounded-xl px-3 py-2",
-        "hover:bg-gray-100",
+        // ホバー地はカラースキームに追従（固定グレーだとダーク時に text-foreground と同化する）。
+        "hover:bg-gray-100 dark:hover:bg-gray-800",
         disabled && "cursor-not-allowed opacity-50",
         className,
       )}
