@@ -20,14 +20,25 @@
 - 状態はストア購読（#12）。静的シェルは Server Component、対話部分のみ `'use client'`（CLAUDE.md）。
 
 ## Todo
-- [ ] `HandTiles`（自手牌・大きく・選択/打牌）
-- [ ] `DiscardPile`（河）
-- [ ] `OpponentArea`（他家・裏向き×3方向）
-- [ ] `ActionButtons`（合法手連動で活性制御）
-- [ ] `room/[id]/page.tsx` のレイアウト（横画面基準）
-- [ ] 配牌アニメーション
-- [ ] お助けトグル/設定/待ってボタンの配置
-- [ ] フェーズ1: CPU1人とローカルで1局打てる最小動作
+- [x] `HandTiles`（自手牌・大きく・選択/打牌）
+- [x] `DiscardPile`（河）＋ `RiverGrid`（4河を方位配置）
+- [x] `OpponentArea`（他家・裏向き×3方向・鳴きface-up・名前/点/手番/リーチ）
+- [x] `ActionButtons`（合法手連動で活性制御。ツモ/リーチ/ポン/チー/カン/ロン/パス＋チー・カン選択ピッカー）
+- [x] `room/[id]/page.tsx` のレイアウト（横画面基準・CSS Grid方位配置）
+- [ ] 配牌アニメーション（→ #17/§3.6 と一緒に。今回は静的）
+- [x] お助けトグル/設定/待ってボタンの配置（TopBar・SettingsModal・WaitButton）
+- [x] フェーズ1: CPU3人とローカルで1局打てる最小動作（タイトルの「ひとりで練習」）
 
 ## 完了条件
 - フェーズ1で手牌表示・ツモ切りができ、最終的に4人分のレイアウトで1局を操作できる。
+
+## 実装メモ
+- 起動: タイトルの **`PracticeStartButton`**（connect→createRoom→start{fillWithCpu, weak}→`/room/[id]`）。本格的な部屋作成/入室/QR/合言葉は #15。
+- 配線: `src/lib/store/useGameConnection.ts`（冪等connect・遷移で切断しない singleton 前提）。
+- 盤面: `src/components/game/`（`GameBoard` オーケストレータ＋`Tile`/`HandTiles`/`DiscardPile`/`RiverGrid`/`OpponentArea`/`TopBar`/`ActionButtons`/`ChiOptionPicker`/`KanTilePicker`/`SettingsModal`/`WaitButton`/`ResultModal`/`ErrorToast`）。
+- サーバー権威: UIは `gameState` を触らず `store.send`→次の `game:state` を待つ。合法手は `myLegalActions` をそのまま信用。
+- お助け（既定ON）: `selectors.ts` に `tenpaiKeepDiscards`/`waitsAfterDiscard`（`drawn===null` ガード内包・`handWaits` の throw 回避）を追加し、HandTilesで枠強調＋打牌確認に待ち補足。深いお助け（他家危険牌・常時役）は #18。
+- 漏洩防止: 他家の `concealed` は **枚数だけ** OpponentArea に渡す（中身は描画しない）。
+- 牌は素の `<img>`（静的SVG・next/image未設定）。`Tile.tsx` のみ `eslint-disable @next/next/no-img-element`。
+- 「待って」は #14 ではローカル一時停止オーバーレイのみ（自手番はCPUが元々止まる）。サーバー連動pause/再接続は #16。
+- 結果は最小表示（役名/翻符/点/増減 or 流局聴牌者）。演出・連荘・複数局・読み上げは #17/#19。

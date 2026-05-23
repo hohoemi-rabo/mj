@@ -1,9 +1,10 @@
 // gameStore 用セレクタ（docs/12）。`useGameStore(selectX)` で必要部分だけ購読し再描画を最小化。
 // 盤面の導出はロジック層（state.ts）に委譲する。
 
-import { type Hand } from "@/lib/mahjong/hand";
-import { type Discard } from "@/lib/mahjong/hand";
+import { type Hand, type Discard, concealedWithDrawn, discard } from "@/lib/mahjong/hand";
 import { type Tile } from "@/lib/mahjong/tiles";
+import { handShanten, handWaits } from "@/lib/mahjong/shanten";
+import { remainingDraws } from "@/lib/mahjong/wall";
 import { type Seat, currentSeat, doraTiles } from "@/lib/mahjong/state";
 import type { GameStore } from "@/lib/store/gameStore";
 
@@ -37,3 +38,40 @@ export const opponentSeats = (mySeat: Seat): [Seat, Seat, Seat] => [
   ((mySeat + 2) % 4) as Seat,
   ((mySeat + 3) % 4) as Seat,
 ];
+
+/** 残りツモ可能数（山の生牌）。 */
+export const selectWallRemaining = (s: GameStore): number =>
+  s.gameState ? remainingDraws(s.gameState.wall) : 0;
+
+// --- お助けモード用の純ヘルパ（store セレクタではない） ---
+// 新しい Set/配列を返すため useSyncExternalStore に直接渡さない。コンポーネントで
+// `useMemo(() => tenpaiKeepDiscards(hand), [hand])` のように安定参照(hand)で memo 化して使う。
+
+/**
+ * いま切るとテンパイ維持（聴牌のまま）になる牌種の集合。
+ * 自分の打牌待ち（drawn!==null＝14枚手）のときのみ意味を持つ。それ以外は空集合。
+ * handWaits は drawn!==null で throw するため、必ず discard 後（13枚）に対して判定する。
+ */
+export const tenpaiKeepDiscards = (hand: Hand | null): ReadonlySet<Tile> => {
+  if (!hand || hand.drawn === null) return new Set();
+  const out = new Set<Tile>();
+  for (const t of new Set(concealedWithDrawn(hand))) {
+    try {
+      if (handShanten(discard(hand, t)) === 0) out.add(t);
+    } catch {
+      /* 切れない牌（理論上ありえない）はスキップ */
+    }
+  }
+  return out;
+};
+
+/** ある牌 tile を切った後の待ち牌（テンパイなら）。テンパイでなければ空配列。 */
+export const waitsAfterDiscard = (hand: Hand | null, tile: Tile): Tile[] => {
+  if (!hand || hand.drawn === null) return [];
+  try {
+    const after = discard(hand, tile);
+    return handShanten(after) === 0 ? handWaits(after) : [];
+  } catch {
+    return [];
+  }
+};

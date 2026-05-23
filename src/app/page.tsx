@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { Heading, ScreenContainer, buttonVariants } from "@/components/ui";
+import { PracticeStartButton } from "@/components/game/PracticeStartButton";
 
 export default function Home() {
   return (
@@ -14,14 +15,9 @@ export default function Home() {
         <p className="max-w-md text-base text-foreground/80">
           ほほ笑みラボのシニア向け麻雀ゲームです。
         </p>
-        <div className="flex flex-col gap-4 sm:flex-row">
-          {/* #15 で入室フローに差し替え。今は導線のみ。 */}
-          <span
-            className={`${buttonVariants({ variant: "primary", size: "lg" })} cursor-not-allowed opacity-50`}
-            aria-disabled="true"
-          >
-            はじめる（準備中）
-          </span>
+        <div className="flex flex-col items-center gap-4">
+          {/* 練習（CPU対戦）導線。みんなで対戦する入室フローは #15。 */}
+          <PracticeStartButton />
           <Link
             href="/ui"
             className={buttonVariants({ variant: "secondary", size: "lg" })}
