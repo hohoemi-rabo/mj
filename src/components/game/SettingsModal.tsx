@@ -1,9 +1,11 @@
 "use client";
 
-// 設定モーダル（docs/14 §3.5/§3.7）。お助け・打牌確認・ミュート・音量。
-// すべて useSettingsStore に接続（localStorage 永続）。音量の実適用（Audio）は #17。
+// 設定モーダル（docs/14 §3.5/§3.7・#17）。お助け・打牌確認・ミュート・音量・音の動作確認。
+// すべて useSettingsStore に接続（localStorage 永続）。音量/ミュートは player.ts が毎再生で参照。
 
 import { Button, Modal, Toggle } from "@/components/ui";
+import { play } from "@/lib/audio/player";
+import { SFX } from "@/lib/audio/manifest";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 
 export interface SettingsModalProps {
@@ -42,7 +44,15 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
             aria-label="音量"
           />
         </label>
-        <p className="text-sm text-foreground/60">※ 音の再生は今後の対応です。</p>
+
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm text-foreground/70">
+            音が鳴らない場合は mp3 が未配置です（ゲームは無音で続行）。
+          </span>
+          <Button variant="secondary" size="default" onClick={() => void play(SFX.discard)}>
+            音を試す
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4 flex justify-end">
