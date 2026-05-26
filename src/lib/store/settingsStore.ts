@@ -20,6 +20,7 @@ export interface SettingsStore {
   volume: number; // 0..1（既定 中=0.5）
   muted: boolean; // ミュート（既定 false）
   discardConfirm: boolean; // 打牌確認ダイアログ（既定 ON）
+  bgmOn: boolean; // BGM 再生（既定 ON。ミュートとは独立に切替可）
 
   setHelpMode(on: boolean): void;
   toggleHelpMode(): void;
@@ -27,6 +28,8 @@ export interface SettingsStore {
   setMuted(m: boolean): void;
   toggleMuted(): void;
   setDiscardConfirm(on: boolean): void;
+  setBgmOn(on: boolean): void;
+  toggleBgmOn(): void;
 }
 
 const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
@@ -38,6 +41,7 @@ export const useSettingsStore = create<SettingsStore>()(
       volume: 0.5,
       muted: false,
       discardConfirm: true,
+      bgmOn: true,
 
       setHelpMode: (on) => set({ helpMode: on }),
       toggleHelpMode: () => set((s) => ({ helpMode: !s.helpMode })),
@@ -45,6 +49,8 @@ export const useSettingsStore = create<SettingsStore>()(
       setMuted: (m) => set({ muted: m }),
       toggleMuted: () => set((s) => ({ muted: !s.muted })),
       setDiscardConfirm: (on) => set({ discardConfirm: on }),
+      setBgmOn: (on) => set({ bgmOn: on }),
+      toggleBgmOn: () => set((s) => ({ bgmOn: !s.bgmOn })),
     }),
     {
       name: "mj-settings",
@@ -56,6 +62,7 @@ export const useSettingsStore = create<SettingsStore>()(
         volume: s.volume,
         muted: s.muted,
         discardConfirm: s.discardConfirm,
+        bgmOn: s.bgmOn,
       }),
     },
   ),

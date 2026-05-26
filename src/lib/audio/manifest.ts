@@ -22,6 +22,11 @@ export const SFX = {
   shuffle: "sfx/shuffle",
 } as const;
 
+/** BGM のID（対局中にループ再生）。 */
+export const BGM = {
+  game: "bgm/game",
+} as const;
+
 /**
  * 役名（YakuHit.name）→ 音声ファイルID。
  * `yaku.ts` の DRAGON_NAME・WIND_NAME と各役の `name` 文字列をそのまま辞書のキーに使う。

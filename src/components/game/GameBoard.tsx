@@ -29,6 +29,7 @@ import { ResultModal } from "@/components/game/ResultModal";
 import { ErrorToast } from "@/components/game/ErrorToast";
 import { WaitButton } from "@/components/game/WaitButton";
 import { useGameEventAudio } from "@/components/game/useGameEventAudio";
+import { useGameBgm } from "@/components/game/useGameBgm";
 import { windLabel } from "@/components/game/labels";
 
 function Centered({ children }: { children: React.ReactNode }) {
@@ -45,6 +46,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
   const router = useRouter();
   useGameConnection();
   useGameEventAudio(); // gameState 差分で SE/読み上げを発火（#17）
+  useGameBgm(); // 対局中の BGM ループ再生（#17）
   const gameState = useGameStore((s) => s.gameState);
   const mySeat = useGameStore((s) => s.mySeat);
   const legal = useGameStore((s) => s.myLegalActions);

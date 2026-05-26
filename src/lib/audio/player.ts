@@ -82,3 +82,42 @@ export const preload = (ids: readonly string[]): void => {
     a?.load();
   }
 };
+
+// --- BGM（ループ再生・SE/voice とは別インスタンス）---
+let bgmAudio: HTMLAudioElement | null = null;
+let bgmId: string | null = null;
+
+/** BGM をループ再生で開始（同IDが既に再生中なら何もしない＝多重起動防止）。 */
+export const startBgm = (id: string): void => {
+  if (typeof window === "undefined") return;
+  if (bgmId === id && bgmAudio && !bgmAudio.paused) return;
+  if (bgmAudio) {
+    bgmAudio.pause();
+    bgmAudio.currentTime = 0;
+  }
+  const a = new Audio(srcOf(id));
+  a.loop = true;
+  a.addEventListener("error", () => {
+    /* 404・デコード失敗は握りつぶす（mp3 未配置でも安全） */
+  });
+  bgmAudio = a;
+  bgmId = id;
+  const p = a.play();
+  if (p && typeof p.then === "function") p.catch(() => { /* autoplay ブロック等は握りつぶす */ });
+};
+
+/** BGM を停止して破棄。 */
+export const stopBgm = (): void => {
+  if (bgmAudio) {
+    bgmAudio.pause();
+    bgmAudio.currentTime = 0;
+    bgmAudio = null;
+    bgmId = null;
+  }
+};
+
+/** 現在の BGM の音量を更新（0..1）。再生中でなければ no-op。 */
+export const setBgmVolume = (v: number): void => {
+  if (!bgmAudio) return;
+  bgmAudio.volume = Math.max(0, Math.min(1, v));
+};

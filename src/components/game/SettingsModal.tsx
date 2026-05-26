@@ -18,10 +18,12 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
   const discardConfirm = useSettingsStore((s) => s.discardConfirm);
   const muted = useSettingsStore((s) => s.muted);
   const volume = useSettingsStore((s) => s.volume);
+  const bgmOn = useSettingsStore((s) => s.bgmOn);
   const setHelpMode = useSettingsStore((s) => s.setHelpMode);
   const setDiscardConfirm = useSettingsStore((s) => s.setDiscardConfirm);
   const setMuted = useSettingsStore((s) => s.setMuted);
   const setVolume = useSettingsStore((s) => s.setVolume);
+  const setBgmOn = useSettingsStore((s) => s.setBgmOn);
 
   return (
     <Modal open={open} onClose={onClose} title="設定">
@@ -29,6 +31,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps) {
         <Toggle checked={helpMode} onChange={setHelpMode} label="お助けモード" hint="初心者向けの案内を表示" />
         <Toggle checked={discardConfirm} onChange={setDiscardConfirm} label="打牌確認" hint="牌を切る前に確認する" />
         <Toggle checked={muted} onChange={setMuted} label="ミュート" hint="音を消す" />
+        <Toggle checked={bgmOn} onChange={setBgmOn} label="BGM" hint="対局中の音楽を鳴らす" />
 
         <label className="flex min-h-tap items-center justify-between gap-4 rounded-xl px-3 py-2">
           <span className="text-base">音量</span>
