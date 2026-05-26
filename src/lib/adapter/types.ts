@@ -69,6 +69,10 @@ export interface MahjongAdapter {
   /** 通信断後の再接続で席を再束縛する（トークンで本人確認・#16）。 */
   reconnect(roomId: RoomId, seat: Seat, token: ClientToken): Promise<void>;
   start(opts?: StartOptions): Promise<void>;
+  /** ホストのみ：もう一局（同じ部屋で新シード対局・#19）。 */
+  rematch(opts?: StartOptions): Promise<void>;
+  /** ホストのみ：部屋を解散（全員へ通知後にメモリから削除・#19）。 */
+  dissolve(): Promise<void>;
 
   /** 打牌・鳴き・和了等のプレイヤーアクション。エラーは onError 経由（fire-and-forget）。 */
   send(action: PlayerAction): void;
@@ -78,4 +82,6 @@ export interface MahjongAdapter {
   onEnd(cb: (state: GameState) => void): Unsubscribe;
   onError(cb: (err: AdapterError) => void): Unsubscribe;
   onConnectionChange(cb: (status: ConnectionStatus) => void): Unsubscribe;
+  /** ホストが部屋を解散したときの通知（全員に配信される・#19）。 */
+  onDissolved(cb: () => void): Unsubscribe;
 }

@@ -160,6 +160,23 @@ export class RoomStore {
     return ok(room.state);
   }
 
+  /**
+   * もう一局（#19）。終局後にだけ許可し、同じ部屋・同じ席・同じパスコードで新しい局を始める。
+   * 状態と started フラグだけ初期化して startGame を呼ぶ＝CPU 強さ等のオプションは引き継げる。
+   */
+  rematch(roomId: RoomId, opts?: StartOptions): Result<GameState> {
+    const room = this.rooms.get(roomId);
+    if (!room) return err("ROOM_NOT_FOUND");
+    if (!room.started || !room.state || room.state.phase.kind !== "ended") {
+      // 進行中の対局を rematch で破壊させないためのガード
+      return err("ILLEGAL_ACTION");
+    }
+    room.started = false;
+    room.state = null;
+    room.seed = null;
+    return this.startGame(roomId, opts);
+  }
+
   applyPlayerAction(roomId: RoomId, seat: Seat, action: GameAction): Result<GameState> {
     const room = this.rooms.get(roomId);
     if (!room) return err("ROOM_NOT_FOUND");

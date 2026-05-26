@@ -32,6 +32,7 @@ export function ActionButtons({
   const [chiOpen, setChiOpen] = useState(false);
   const [kanOpen, setKanOpen] = useState(false);
   const [ronOpen, setRonOpen] = useState(false);
+  const [tsumoOpen, setTsumoOpen] = useState(false);
 
   // 自手番のカン候補（暗・加をまとめて扱う）。
   const kanCandidates: KanCandidate[] = [
@@ -61,7 +62,7 @@ export function ActionButtons({
     <div className="flex flex-wrap items-center justify-center gap-3">
       {/* --- 自手番 --- */}
       {legal.canTsumo && (
-        <Button variant="primary" size="lg" className={pulse} onClick={() => onAction({ type: "tsumo", seat })}>
+        <Button variant="primary" size="lg" className={pulse} onClick={() => setTsumoOpen(true)}>
           <Term word="ツモ" hint="自分で引いてアガリ" />
         </Button>
       )}
@@ -102,6 +103,19 @@ export function ActionButtons({
           <Term word="パス" hint="鳴かない" />
         </Button>
       )}
+
+      {/* ツモ確認（誤タップ防止・#19） */}
+      <ConfirmDialog
+        open={tsumoOpen}
+        title="ツモしますか？"
+        confirmLabel="ツモ"
+        cancelLabel="やめる"
+        onConfirm={() => {
+          onAction({ type: "tsumo", seat });
+          setTsumoOpen(false);
+        }}
+        onCancel={() => setTsumoOpen(false)}
+      />
 
       {/* ロン確認（取り消し不可なので danger） */}
       <ConfirmDialog

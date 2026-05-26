@@ -96,6 +96,24 @@ export class LocalAdapter implements MahjongAdapter {
     });
   }
 
+  rematch(opts?: StartOptions): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.s.emit("game:rematch", { opts }, (res: { ok: true } | AdapterError) => {
+        if ("ok" in res) resolve();
+        else reject(res);
+      });
+    });
+  }
+
+  dissolve(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.s.emit("room:dissolve", {}, (res: { ok: true } | AdapterError) => {
+        if ("ok" in res) resolve();
+        else reject(res);
+      });
+    });
+  }
+
   send(action: PlayerAction): void {
     const s = this.s;
     switch (action.type) {
@@ -147,6 +165,12 @@ export class LocalAdapter implements MahjongAdapter {
     const h = (err: AdapterError) => cb(err);
     this.s.on("app:error", h); // "error" は socket.io 予約系を避ける
     return () => this.socket.off("app:error", h);
+  }
+
+  onDissolved(cb: () => void): Unsubscribe {
+    const h = () => cb();
+    this.s.on("room:dissolved", h);
+    return () => this.socket.off("room:dissolved", h);
   }
 
   onConnectionChange(cb: (status: ConnectionStatus) => void): Unsubscribe {

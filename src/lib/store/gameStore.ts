@@ -32,11 +32,17 @@ export interface GameStore {
   gameState: GameState | null;
   myLegalActions: LegalActions | null;
   lastError: AdapterError | null;
+  /** ホストが部屋を解散したか（サーバーからの room:dissolved で true・#19）。UI 側で title 遷移の契機にする。 */
+  dissolved: boolean;
 
   connect(adapter: MahjongAdapter): Promise<void>;
   createRoom(name: string): Promise<void>;
   joinRoom(passcode: Passcode, name: string): Promise<void>;
   start(opts?: StartOptions): Promise<void>;
+  /** ホストのみ：もう一局（#19）。失敗は lastError へ。 */
+  rematch(opts?: StartOptions): Promise<void>;
+  /** ホストのみ：部屋を解散（#19）。失敗は lastError へ。 */
+  dissolve(): Promise<void>;
   send(action: PlayerAction): void;
   disconnect(): void;
   clearError(): void;
@@ -52,6 +58,7 @@ const INITIAL = {
   gameState: null,
   myLegalActions: null,
   lastError: null,
+  dissolved: false,
 };
 
 // adapter は描画に関係しないのでクロージャ変数に保持（state に入れて再描画を誘発しない）。
@@ -91,6 +98,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       adapter.onState((gameState) => set({ gameState, myLegalActions: deriveLegal(gameState, get().mySeat) })),
       adapter.onEnd((gameState) => set({ gameState, myLegalActions: deriveLegal(gameState, get().mySeat) })),
       adapter.onError((lastError) => set({ lastError })),
+      // #19 サーバーが部屋を解散したら dissolved を立てる。UI 側で title 遷移するため roomId/mySeat は残す。
+      adapter.onDissolved(() => set({ dissolved: true })),
     );
     await adapter.connect();
   },
@@ -116,6 +125,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   async start(opts) {
     try {
       await requireAdapter().start(opts);
+    } catch (e) {
+      set({ lastError: e as AdapterError });
+    }
+  },
+
+  async rematch(opts) {
+    try {
+      await requireAdapter().rematch(opts);
+    } catch (e) {
+      set({ lastError: e as AdapterError });
+    }
+  },
+
+  async dissolve() {
+    try {
+      await requireAdapter().dissolve();
     } catch (e) {
       set({ lastError: e as AdapterError });
     }

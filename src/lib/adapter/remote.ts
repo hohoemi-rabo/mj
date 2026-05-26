@@ -37,6 +37,12 @@ export class RemoteAdapter implements MahjongAdapter {
   start(_opts?: StartOptions): Promise<void> {
     throw new Error(NOT_IMPLEMENTED);
   }
+  rematch(_opts?: StartOptions): Promise<void> {
+    throw new Error(NOT_IMPLEMENTED);
+  }
+  dissolve(): Promise<void> {
+    throw new Error(NOT_IMPLEMENTED);
+  }
   send(_action: PlayerAction): void {
     throw new Error(NOT_IMPLEMENTED);
   }
@@ -53,6 +59,9 @@ export class RemoteAdapter implements MahjongAdapter {
     throw new Error(NOT_IMPLEMENTED);
   }
   onConnectionChange(_cb: (status: ConnectionStatus) => void): Unsubscribe {
+    throw new Error(NOT_IMPLEMENTED);
+  }
+  onDissolved(_cb: () => void): Unsubscribe {
     throw new Error(NOT_IMPLEMENTED);
   }
 }

@@ -212,6 +212,52 @@ describe("後始末", () => {
   });
 });
 
+describe("もう一局（rematch #19）", () => {
+  it("未開始/進行中の rematch は ILLEGAL_ACTION", () => {
+    const store = new RoomStore();
+    const { roomId } = unwrap(store.createRoom("A"));
+    // 未開始
+    const r1 = store.rematch(roomId);
+    expect(r1.ok).toBe(false);
+    if (!r1.ok) expect(r1.error.code).toBe("ILLEGAL_ACTION");
+    // 進行中（終局していない）
+    unwrap(store.startGame(roomId, { seed: 1, fillWithCpu: true }));
+    const r2 = store.rematch(roomId);
+    expect(r2.ok).toBe(false);
+    if (!r2.ok) expect(r2.error.code).toBe("ILLEGAL_ACTION");
+  });
+
+  it.each([1, 7])("seed=%i 終局後の rematch で同じ席のまま新しい局が始まる", (seed) => {
+    const store = new RoomStore();
+    const { roomId } = unwrap(store.createRoom("human"));
+    store.bindSocket(roomId, 0, "sH");
+    store.fillWithCpu(roomId, "weak");
+    unwrap(store.startGame(roomId, { seed }));
+    // CPU 代行で全席自動進行→終局へ
+    store.markDisconnected("sH");
+    const rngs = [0, 1, 2, 3].map((i) => createRng(seed * 11 + i));
+    let guard = 0;
+    while (store.getState(roomId)!.phase.kind !== "ended" && guard++ < 5000) {
+      if (store.advanceAuto(roomId, (s) => rngs[s]) === null) break;
+    }
+    const ended = store.getState(roomId)!;
+    expect(ended.phase.kind).toBe("ended");
+
+    // 席・名前は維持されるべき（rematch 前）
+    const playersBefore = store.getPlayers(roomId);
+    expect(playersBefore).toHaveLength(4);
+    expect(playersBefore[0]?.name).toBe("human");
+
+    // rematch
+    const rm = unwrap(store.rematch(roomId, { seed: seed + 100 }));
+    expect(rm.phase.kind).not.toBe("ended");
+    // 席は保持
+    const playersAfter = store.getPlayers(roomId);
+    expect(playersAfter.map((p) => p.name)).toEqual(playersBefore.map((p) => p.name));
+    assertConservation(rm);
+  });
+});
+
 describe("切断/再接続（#16）", () => {
   const connectedOf = (store: RoomStore, roomId: string, seat: Seat): boolean | undefined =>
     store.getPlayers(roomId).find((p) => p.seat === seat)?.connected;

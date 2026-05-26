@@ -142,6 +142,33 @@ app.prepare().then(() => {
       driveAutoTimed(data.roomId);
     });
 
+    // #19 もう一局: 終局後にだけ許可。同じ部屋・同じ席で新シードの局を始める。
+    socket.on("game:rematch", ({ opts }: { opts?: StartOptions }, ack?: (res: unknown) => void) => {
+      if (data.roomId === undefined) { ack?.({ code: "ROOM_NOT_FOUND", message: "部屋がありません" }); return; }
+      if (data.seat !== 0) { ack?.({ code: "NOT_HOST", message: "ホストのみ操作できます" }); return; }
+      // 旧局の自動ドライブが残っていたら止める（安全側）。
+      const old = driveTimers.get(data.roomId);
+      if (old) { clearTimeout(old); driveTimers.delete(data.roomId); }
+      const res = store.rematch(data.roomId, opts);
+      if (!res.ok) { ack?.(res.error); return; }
+      ack?.({ ok: true });
+      io.to(data.roomId).emit("room:players", store.getPlayers(data.roomId));
+      broadcast(data.roomId);
+      driveAutoTimed(data.roomId);
+    });
+
+    // #19 部屋の解散: タイマー停止 → 全員に room:dissolved を通知 → 部屋削除。
+    socket.on("room:dissolve", (_: unknown, ack?: (res: unknown) => void) => {
+      if (data.roomId === undefined) { ack?.({ code: "ROOM_NOT_FOUND", message: "部屋がありません" }); return; }
+      if (data.seat !== 0) { ack?.({ code: "NOT_HOST", message: "ホストのみ操作できます" }); return; }
+      const roomId = data.roomId;
+      const t = driveTimers.get(roomId);
+      if (t) { clearTimeout(t); driveTimers.delete(roomId); }
+      io.to(roomId).emit("room:dissolved");
+      store.removeRoom(roomId);
+      ack?.({ ok: true });
+    });
+
     // プレイヤーアクション（席はサーバー束縛を使う＝自己申告を信用しない）。
     const onAction = ({ action }: { action: GameAction }) => applyAndBroadcast(action);
     socket.on("player:discard", onAction);

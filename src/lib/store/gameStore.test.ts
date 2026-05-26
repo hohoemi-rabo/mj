@@ -28,6 +28,9 @@ class FakeAdapter implements MahjongAdapter {
   connCb?: (c: ConnectionStatus) => void;
   sent: PlayerAction[] = [];
   reconnects: { roomId: string; seat: Seat; token: string }[] = [];
+  rematches = 0;
+  dissolves = 0;
+  dissolvedCb?: () => void;
   createResult: SeatAssignment | AdapterError = { roomId: "r1", seat: 0, token: "t0", passcode: "1234" };
   joinResult: SeatAssignment | AdapterError = { roomId: "r1", seat: 1, token: "t1" };
 
@@ -47,6 +50,14 @@ class FakeAdapter implements MahjongAdapter {
     return Promise.resolve();
   }
   start(_opts?: StartOptions): Promise<void> {
+    return Promise.resolve();
+  }
+  rematch(_opts?: StartOptions): Promise<void> {
+    this.rematches++;
+    return Promise.resolve();
+  }
+  dissolve(): Promise<void> {
+    this.dissolves++;
     return Promise.resolve();
   }
   send(action: PlayerAction): void {
@@ -71,6 +82,10 @@ class FakeAdapter implements MahjongAdapter {
   onConnectionChange(cb: (c: ConnectionStatus) => void): Unsubscribe {
     this.connCb = cb;
     return () => { this.connCb = undefined; };
+  }
+  onDissolved(cb: () => void): Unsubscribe {
+    this.dissolvedCb = cb;
+    return () => { this.dissolvedCb = undefined; };
   }
 }
 

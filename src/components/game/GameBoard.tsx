@@ -4,7 +4,7 @@
 // サーバー権威: UI は gameState を一切ミューテートせず、操作は store.send で送り次の game:state を待つ。
 // UIローカル状態（打牌確認の対象牌・リーチselectモード・設定モーダル等）はここで集中管理する。
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type Tile as TileType, tileName } from "@/lib/mahjong/tiles";
@@ -56,6 +56,15 @@ export function GameBoard({ roomId }: { roomId: string }) {
   const legal = useGameStore((s) => s.myLegalActions);
   const players = useGameStore((s) => s.players);
   const connection = useGameStore((s) => s.connection);
+  const dissolved = useGameStore((s) => s.dissolved);
+
+  // #19 解散通知を受けたらタイトルへ。disconnect() でストアを INITIAL に戻す。
+  useEffect(() => {
+    if (dissolved) {
+      useGameStore.getState().disconnect();
+      router.push("/");
+    }
+  }, [dissolved, router]);
   const send = useGameStore((s) => s.send);
 
   const discardConfirm = useSettingsStore((s) => s.discardConfirm);
@@ -113,6 +122,15 @@ export function GameBoard({ roomId }: { roomId: string }) {
   const backToTitle = () => {
     useGameStore.getState().disconnect();
     router.push("/");
+  };
+
+  // #19 もう一局: server.rematch 経由。成功すれば game:state が再到着して result が消える＝モーダル自動クローズ。
+  const handleRematch = () => {
+    void useGameStore.getState().rematch({ fillWithCpu: true });
+  };
+  // #19 部屋を解散: server に通知。成功すれば onDissolved → dissolved=true で useEffect 経由でタイトル遷移。
+  const handleDissolve = () => {
+    void useGameStore.getState().dissolve();
   };
 
   const doDiscard = (tile: TileType) => {
@@ -253,7 +271,14 @@ export function GameBoard({ roomId }: { roomId: string }) {
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       {/* 終局結果（result があれば表示） */}
-      <ResultModal result={gameState.result} nameOf={nameOf} onBackToTitle={backToTitle} />
+      <ResultModal
+        result={gameState.result}
+        nameOf={nameOf}
+        isHost={seat === 0}
+        onBackToTitle={backToTitle}
+        onRematch={handleRematch}
+        onDissolve={handleDissolve}
+      />
     </ScreenContainer>
   );
 }
