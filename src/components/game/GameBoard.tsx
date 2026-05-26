@@ -12,8 +12,10 @@ import { type Seat, currentSeat } from "@/lib/mahjong/state";
 import { useGameConnection } from "@/lib/store/useGameConnection";
 import { useGameStore } from "@/lib/store/gameStore";
 import {
+  currentlyPossibleYaku,
   opponentSeats,
   selectMyHand,
+  selectMyWaits,
   tenpaiKeepDiscards,
   waitsAfterDiscard,
 } from "@/lib/store/selectors";
@@ -28,6 +30,8 @@ import { SettingsModal } from "@/components/game/SettingsModal";
 import { ResultModal } from "@/components/game/ResultModal";
 import { ErrorToast } from "@/components/game/ErrorToast";
 import { WaitButton } from "@/components/game/WaitButton";
+import { TenpaiNotice } from "@/components/game/TenpaiNotice";
+import { YakuBadges } from "@/components/game/YakuBadges";
 import { useGameEventAudio } from "@/components/game/useGameEventAudio";
 import { useGameBgm } from "@/components/game/useGameBgm";
 import { windLabel } from "@/components/game/labels";
@@ -65,6 +69,15 @@ export function GameBoard({ roomId }: { roomId: string }) {
   const hand = useGameStore(selectMyHand);
   // お助け: 安定参照 hand をキーに memo 化（fresh Set を毎回 store へ返さない）。
   const tenpaiKeep = useMemo(() => tenpaiKeepDiscards(hand), [hand]);
+  // 当たり牌（他家河ハイライト用）。drawn===null && tenpai のときだけ非空。
+  const myWaits = useMemo(() => selectMyWaits(hand), [hand]);
+  // 風（gameState ない間はダミー z1。currentlyPossibleYaku は hand=null で空配列を返すので無害）。
+  const seatWindOfMe = gameState && mySeat !== null ? gameState.players[mySeat].seatWind : "z1";
+  const roundWindNow = gameState ? gameState.roundWind : "z1";
+  const possibleYaku = useMemo(
+    () => currentlyPossibleYaku(hand, seatWindOfMe, roundWindNow),
+    [hand, seatWindOfMe, roundWindNow],
+  );
 
   // 対局が無い（直接アクセス/リロード）: 完全再接続は #16。タイトルへ誘導。
   if (!gameState && mySeat === null) {
@@ -145,14 +158,23 @@ export function GameBoard({ roomId }: { roomId: string }) {
 
         {/* 中央の河 */}
         <div className="col-start-2 row-start-3">
-          <RiverGrid gameState={gameState} mySeat={seat} />
+          <RiverGrid
+            gameState={gameState}
+            mySeat={seat}
+            helpHighlight={helpMode ? myWaits : null}
+          />
         </div>
 
         {/* 下家（右） */}
         <div className="col-start-3 row-start-3 self-center">{opponent(rightSeat, "right")}</div>
 
-        {/* 自手牌 */}
-        <div className="col-span-3 row-start-4">
+        {/* 自手牌（お助け: 上に聴牌通知、下に成立しうる役） */}
+        <div className="col-span-3 row-start-4 flex flex-col items-center gap-2">
+          {helpMode && (
+            <div className="min-h-[1.5rem]">
+              <TenpaiNotice hand={hand} />
+            </div>
+          )}
           <HandTiles
             hand={hand}
             legal={legal}
@@ -161,6 +183,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
             tenpaiKeep={tenpaiKeep}
             onTileClick={onTileClick}
           />
+          {helpMode && <YakuBadges names={possibleYaku} />}
         </div>
 
         {/* 操作ボタン */}

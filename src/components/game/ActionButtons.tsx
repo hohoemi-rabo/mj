@@ -83,17 +83,17 @@ export function ActionButtons({
         </Button>
       )}
       {legal.canPon && (
-        <Button variant="secondary" size="lg" onClick={() => onAction({ type: "pon", seat })}>
+        <Button variant="secondary" size="lg" className={pulse} onClick={() => onAction({ type: "pon", seat })}>
           <Term word="ポン" hint="同じ牌2枚で3枚にする" />
         </Button>
       )}
       {legal.chiOptions.length > 0 && (
-        <Button variant="secondary" size="lg" onClick={onChi}>
+        <Button variant="secondary" size="lg" className={pulse} onClick={onChi}>
           <Term word="チー" hint="数の並びを作る" />
         </Button>
       )}
       {legal.canMinkan && (
-        <Button variant="secondary" size="lg" onClick={() => onAction({ type: "minkan", seat })}>
+        <Button variant="secondary" size="lg" className={pulse} onClick={() => onAction({ type: "minkan", seat })}>
           <Term word="カン" hint="同じ牌4枚" />
         </Button>
       )}
