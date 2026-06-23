@@ -28,7 +28,7 @@ const mkHand = (
 const TENPAI_13: Tile[] = ["m1", "m1", "m2", "m3", "m4", "p2", "p3", "p4", "s5", "s6", "s7", "p7", "p8"];
 
 describe("tenpaiKeepDiscards（#14 既存ヘルパ）", () => {
-  it("drawn===null は空集合（14枚手のみ意味を持つ）", () => {
+  it("drawn===null かつ 3n+1 形（次のツモ待ち）は空集合", () => {
     const h = mkHand(TENPAI_13);
     expect(tenpaiKeepDiscards(h).size).toBe(0);
   });
@@ -38,6 +38,18 @@ describe("tenpaiKeepDiscards（#14 既存ヘルパ）", () => {
     const h = mkHand(TENPAI_13, { drawn: "z5" });
     const keep = tenpaiKeepDiscards(h);
     expect(keep.has("z5")).toBe(true); // ツモ切りで元のテンパイに戻る
+  });
+  it("ポン直後（3n+2形・drawn=null）も「打牌が必要」な状態として扱い、テンパイ維持の切り牌を返す", () => {
+    // 鳴き×1 + 純手牌 11 枚。p3 をポンで使った想定で、ここから z5 を切れば
+    // m1m1 / m2m3m4 / p2p3p4 / p7p8 + ポン s9s9s9 のテンパイ（p6/p9 待ち）が残る。
+    const pon: Meld = { type: "pon", tiles: ["s9", "s9", "s9"], calledTile: "s9", from: 1 };
+    const afterPon = mkHand(
+      ["m1", "m1", "m2", "m3", "m4", "p2", "p3", "p4", "p7", "p8", "z5"],
+      { melds: [pon] },
+    );
+    expect(() => tenpaiKeepDiscards(afterPon)).not.toThrow();
+    const keep = tenpaiKeepDiscards(afterPon);
+    expect(keep.has("z5")).toBe(true);
   });
   it("null は空", () => {
     expect(tenpaiKeepDiscards(null).size).toBe(0);
@@ -77,6 +89,57 @@ describe("selectMyWaits（#18 新規）", () => {
   });
   it("null は空", () => {
     expect(selectMyWaits(null).size).toBe(0);
+  });
+  it("ポン直後の打牌待ち（3n+2形・concealed=11）でも throw せず空を返す（リグレッション）", () => {
+    // 鳴き×1 + 純手牌 11 枚（13 - ポンで使った 2 枚）。drawn=null だが「打牌が必要」な状態。
+    const pon: Meld = { type: "pon", tiles: ["s9", "s9", "s9"], calledTile: "s9", from: 1 };
+    const afterPon = mkHand(
+      ["m1", "m1", "m2", "m3", "m4", "p2", "p3", "p4", "p5", "p7", "p8"],
+      { melds: [pon] },
+    );
+    expect(() => selectMyWaits(afterPon)).not.toThrow();
+    expect(selectMyWaits(afterPon).size).toBe(0);
+  });
+  it("チー直後の打牌待ち（3n+2形・concealed=11）でも throw しない（ポンと同形）", () => {
+    const chi: Meld = { type: "chi", tiles: ["s7", "s8", "s9"], calledTile: "s9", from: 3 };
+    const afterChi = mkHand(
+      ["m1", "m1", "m2", "m3", "m4", "p2", "p3", "p4", "p5", "p7", "p8"],
+      { melds: [chi] },
+    );
+    expect(() => selectMyWaits(afterChi)).not.toThrow();
+    expect(selectMyWaits(afterChi).size).toBe(0);
+  });
+  it("カン直後（嶺上ツモ前・3n+1形・concealed=10）も throw せず、テンパイなら待ち牌を返す", () => {
+    // 大明槓 s9 + 純手牌 10 枚で p6/p9 待ちのテンパイ（m1m1 / m2m3m4 / p2p3p4 / p7p8）。
+    // この形は嶺上ツモ前の瞬間（concealed=10, drawn=null, meldCount=1 → 10+3=13 = 3n+1）。
+    const minkan: Meld = {
+      type: "minkan",
+      tiles: ["s9", "s9", "s9", "s9"],
+      calledTile: "s9",
+      from: 1,
+    };
+    const afterMinkan = mkHand(
+      ["m1", "m1", "m2", "m3", "m4", "p2", "p3", "p4", "p7", "p8"],
+      { melds: [minkan] },
+    );
+    expect(() => selectMyWaits(afterMinkan)).not.toThrow();
+    expect(selectMyWaits(afterMinkan)).toEqual(new Set<Tile>(["p6", "p9"]));
+  });
+  it("カン後の打牌待ち（嶺上ツモ後・3n+2形・concealed=10+drawn）でも throw しない", () => {
+    const minkan: Meld = {
+      type: "minkan",
+      tiles: ["s9", "s9", "s9", "s9"],
+      calledTile: "s9",
+      from: 1,
+    };
+    const afterRinshan = mkHand(
+      ["m1", "m1", "m2", "m3", "m4", "p2", "p3", "p4", "p7", "p8"],
+      { melds: [minkan], drawn: "z5" },
+    );
+    // 嶺上ツモ後は drawn!==null＝3n+2形 → selectMyWaits は空、tenpaiKeepDiscards が打牌候補を返す。
+    expect(selectMyWaits(afterRinshan).size).toBe(0);
+    expect(() => tenpaiKeepDiscards(afterRinshan)).not.toThrow();
+    expect(tenpaiKeepDiscards(afterRinshan).has("z5")).toBe(true);
   });
 });
 

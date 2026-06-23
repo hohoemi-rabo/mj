@@ -49,11 +49,11 @@ export const selectWallRemaining = (s: GameStore): number =>
 
 /**
  * いま切るとテンパイ維持（聴牌のまま）になる牌種の集合。
- * 自分の打牌待ち（drawn!==null＝14枚手）のときのみ意味を持つ。それ以外は空集合。
- * handWaits は drawn!==null で throw するため、必ず discard 後（13枚）に対して判定する。
+ * 「打牌が必要」な状態（ツモ後＝drawn!==null、もしくはポン/チー/明槓直後＝3n+2形）でのみ意味を持つ。それ以外は空集合。
+ * handWaits は 3n+1 形でないと throw するため、必ず discard 後（3n+1）に対して判定する。
  */
 export const tenpaiKeepDiscards = (hand: Hand | null): ReadonlySet<Tile> => {
-  if (!hand || hand.drawn === null) return new Set();
+  if (!hand || concealedWithDrawn(hand).length % 3 !== 2) return new Set();
   const out = new Set<Tile>();
   for (const t of new Set(concealedWithDrawn(hand))) {
     try {
@@ -67,7 +67,7 @@ export const tenpaiKeepDiscards = (hand: Hand | null): ReadonlySet<Tile> => {
 
 /** ある牌 tile を切った後の待ち牌（テンパイなら）。テンパイでなければ空配列。 */
 export const waitsAfterDiscard = (hand: Hand | null, tile: Tile): Tile[] => {
-  if (!hand || hand.drawn === null) return [];
+  if (!hand || concealedWithDrawn(hand).length % 3 !== 2) return [];
   try {
     const after = discard(hand, tile);
     return handShanten(after) === 0 ? handWaits(after) : [];
@@ -78,11 +78,11 @@ export const waitsAfterDiscard = (hand: Hand | null, tile: Tile): Tile[] => {
 
 /**
  * 自分の「待ち牌」集合（お助けの河ハイライト用・#18）。
- * `drawn===null`（次のツモ待ち状態）かつテンパイのときだけ意味を持つ。それ以外は空集合。
- * 14枚手（drawn!==null）では handWaits が throw するのでこの状況では空にする。
+ * 「次のツモ待ち」状態（3n+1形）かつテンパイのときだけ意味を持つ。それ以外は空集合。
+ * ツモ後（14枚）やポン/チー/明槓直後（3n+2）では handWaits が throw するので空にする。
  */
 export const selectMyWaits = (hand: Hand | null): ReadonlySet<Tile> => {
-  if (!hand || hand.drawn !== null) return new Set();
+  if (!hand || concealedWithDrawn(hand).length % 3 !== 1) return new Set();
   if (handShanten(hand) !== 0) return new Set();
   return new Set(handWaits(hand));
 };
