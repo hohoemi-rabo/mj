@@ -11,7 +11,8 @@ export function YakuBadges({ names }: YakuBadgesProps) {
   if (names.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center justify-center gap-1">
-      <span className="text-sm text-foreground/70">狙えそうな役：</span>
+      {/* GameBoard のフェルト面に乗るので、ライトモードでも読めるよう固定で白系。 */}
+      <span className="text-sm text-white/80">狙えそうな役：</span>
       {names.map((n) => (
         <Badge key={n} variant="info">
           {n}

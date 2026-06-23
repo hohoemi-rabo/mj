@@ -33,15 +33,20 @@ export function OpponentArea({ player, info, isCurrent, position }: OpponentArea
         isCurrent ? "border-primary bg-primary/5" : "border-transparent",
       )}
     >
-      <div className="flex items-center gap-2 text-sm">
-        <span className="font-bold">{windLabel(player.seatWind)}</span>
-        <span className="font-bold">{name}</span>
-        {info?.isCpu && (
-          <span className="rounded bg-gray-300 px-1 text-xs text-gray-800 dark:bg-gray-600 dark:text-gray-100">
-            CPU
-          </span>
-        )}
-        <span className="ml-auto tabular-nums">{player.points}点</span>
+      {/* ヘッダは2行: 上=風家+名前+CPU、下=点数。狭い枠でも崩れず、シニアにも読みやすい。 */}
+      <div className="flex flex-col gap-0.5 whitespace-nowrap leading-tight">
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="font-bold">{windLabel(player.seatWind)}家</span>
+          <span className="font-bold">{name}</span>
+          {info?.isCpu && (
+            <span className="rounded bg-gray-300 px-1.5 text-xs font-bold text-gray-800 dark:bg-gray-600 dark:text-gray-100">
+              CPU
+            </span>
+          )}
+        </div>
+        <div className="text-base font-bold tabular-nums">
+          {player.points.toLocaleString()}点
+        </div>
       </div>
 
       {player.hand.riichi && (

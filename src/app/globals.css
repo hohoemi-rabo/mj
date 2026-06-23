@@ -24,3 +24,51 @@ body {
   color: var(--foreground);
   font-family: var(--font-jp-sans), system-ui, sans-serif;
 }
+
+/* === 麻雀卓のテクスチャ（#14 仕上げ）。フェルトと木目フチを画像なしで質感UP。 === */
+@layer components {
+  /* 緑フェルト面: 中央が少し明るく端が暗い vignette ＋ SVG 由来の細かいノイズ。
+     base #0a3b22（暗いフォレストグリーン）の上に微細なザラ感を載せる。 */
+  .mahjong-felt {
+    background-color: #0a3b22;
+    background-image:
+      radial-gradient(
+        ellipse at center,
+        rgba(255, 255, 255, 0.06) 0%,
+        rgba(255, 255, 255, 0.02) 35%,
+        rgba(0, 0, 0, 0.18) 75%,
+        rgba(0, 0, 0, 0.42) 100%
+      ),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='5' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-size:
+      cover,
+      180px 180px;
+    background-repeat: no-repeat, repeat;
+  }
+
+  /* 木目フチ: ベース茶色 + 横方向の大きな色帯（柾目風）+ 微細な縞（年輪風）。
+     repeating-linear-gradient の alpha を 3〜8% に抑えてストライプにならないようにする。 */
+  .mahjong-wood {
+    background-color: #4a2f1a;
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.04) 0px,
+        rgba(255, 255, 255, 0.04) 1px,
+        transparent 1px,
+        transparent 7px,
+        rgba(0, 0, 0, 0.09) 7px,
+        rgba(0, 0, 0, 0.09) 8px,
+        transparent 8px,
+        transparent 14px
+      ),
+      linear-gradient(
+        90deg,
+        #36210f 0%,
+        #4a2f1a 22%,
+        #5d3a22 50%,
+        #4a2f1a 78%,
+        #36210f 100%
+      );
+  }
+}

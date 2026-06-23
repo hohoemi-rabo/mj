@@ -38,7 +38,7 @@ import { windLabel } from "@/components/game/labels";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return (
-    <ScreenContainer>
+    <ScreenContainer className="bg-[#1f1611] text-white">
       <div className="flex min-h-[70dvh] flex-col items-center justify-center gap-6 text-center">
         {children}
       </div>
@@ -92,8 +92,8 @@ export function GameBoard({ roomId }: { roomId: string }) {
   if (!gameState && mySeat === null) {
     return (
       <Centered>
-        <Heading level={2}>対局が見つかりません</Heading>
-        <p className="text-base text-foreground/80">タイトルからやり直してください。</p>
+        <Heading level={2} className="!text-white">対局が見つかりません</Heading>
+        <p className="text-base text-white/80">タイトルからやり直してください。</p>
         <Link href="/">
           <Button variant="primary" size="lg">
             タイトルへ戻る
@@ -106,8 +106,8 @@ export function GameBoard({ roomId }: { roomId: string }) {
   if (!gameState || mySeat === null || !hand) {
     return (
       <Centered>
-        <Heading level={2}>準備中…</Heading>
-        <p className="text-base text-foreground/80">配牌を待っています。</p>
+        <Heading level={2} className="!text-white">準備中…</Heading>
+        <p className="text-base text-white/80">配牌を待っています。</p>
       </Centered>
     );
   }
@@ -158,24 +158,38 @@ export function GameBoard({ roomId }: { roomId: string }) {
   );
 
   return (
-    <ScreenContainer showRotateHint>
+    <ScreenContainer showRotateHint className="bg-[#1f1611] text-white">
       <div
         data-room-id={roomId}
         className="grid min-h-[82dvh] grid-cols-[auto_1fr_auto] grid-rows-[auto_auto_1fr_auto_auto] gap-2"
       >
+        {/* 卓フェルト背景: 対面・上家/下家・河・自手牌が乗る面 (行2-4)。
+            外枠=木目フチ(p-2=8px)、内側=フェルト面+inset shadow(凹み感)。
+            primary 緑(#1d6f42)と干渉しないフォレストグリーン。z-0 で他要素の下へ。 */}
+        <div
+          aria-hidden
+          className="mahjong-wood pointer-events-none col-span-3 col-start-1 row-span-3 row-start-2 z-0 rounded-3xl p-2 shadow-[0_8px_24px_rgba(0,0,0,0.55),0_2px_4px_rgba(0,0,0,0.4)]"
+        >
+          <div className="mahjong-felt h-full w-full rounded-2xl shadow-[inset_0_3px_6px_rgba(0,0,0,0.7),inset_0_-2px_4px_rgba(0,0,0,0.5),inset_0_0_60px_rgba(0,0,0,0.35)]" />
+        </div>
+
         {/* 上部バー */}
-        <div className="col-span-3 row-start-1">
+        <div className="relative z-10 col-span-3 row-start-1">
           <TopBar gameState={gameState} mySeat={seat} onOpenSettings={() => setSettingsOpen(true)} />
         </div>
 
-        {/* 対面（上） */}
-        <div className="col-start-2 row-start-2 justify-self-center">{opponent(topSeat, "top")}</div>
+        {/* 対面（上）。フェルト上に乗るので白文字。mt-4 で上の木目フチから離す。 */}
+        <div className="relative z-10 col-start-2 row-start-2 mt-4 justify-self-center text-white">
+          {opponent(topSeat, "top")}
+        </div>
 
-        {/* 上家（左） */}
-        <div className="col-start-1 row-start-3 self-center">{opponent(leftSeat, "left")}</div>
+        {/* 上家（左）。ml-4 で左の木目フチから離す。 */}
+        <div className="relative z-10 col-start-1 row-start-3 ml-4 self-center text-white">
+          {opponent(leftSeat, "left")}
+        </div>
 
         {/* 中央の河 */}
-        <div className="col-start-2 row-start-3">
+        <div className="relative z-10 col-start-2 row-start-3">
           <RiverGrid
             gameState={gameState}
             mySeat={seat}
@@ -183,11 +197,16 @@ export function GameBoard({ roomId }: { roomId: string }) {
           />
         </div>
 
-        {/* 下家（右） */}
-        <div className="col-start-3 row-start-3 self-center">{opponent(rightSeat, "right")}</div>
+        {/* 下家（右）。mr-4 で右の木目フチから離す。 */}
+        <div className="relative z-10 col-start-3 row-start-3 mr-4 self-center text-white">
+          {opponent(rightSeat, "right")}
+        </div>
 
-        {/* 自手牌（お助け: 上に聴牌通知、下に成立しうる役） */}
-        <div className="col-span-3 row-start-4 flex flex-col items-center gap-2">
+        {/* 自手牌（お助け: 上に聴牌通知、下に成立しうる役）。
+            col-start-1 を明示しないと、felt の row-span が行4を埋めてる扱いになり
+            auto-placement が暗黙列を右に作って卓外にはみ出す。
+            pb-5 で YakuBadges が felt の下辺の木目フチに被るのを防ぐ。 */}
+        <div className="relative z-10 col-span-3 col-start-1 row-start-4 flex flex-col items-center gap-2 px-4 pb-5">
           {helpMode && (
             <div className="min-h-[1.5rem]">
               <TenpaiNotice hand={hand} />
@@ -205,7 +224,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
         </div>
 
         {/* 操作ボタン */}
-        <div className="col-span-3 row-start-5 flex min-h-tap flex-wrap items-center justify-center gap-3">
+        <div className="relative z-10 col-span-3 row-start-5 flex min-h-tap flex-wrap items-center justify-center gap-3">
           {riichiSelect ? (
             <>
               <span className="text-base font-bold">リーチする牌を選んでください</span>
