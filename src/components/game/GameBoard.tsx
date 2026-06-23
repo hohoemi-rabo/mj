@@ -267,8 +267,13 @@ export function GameBoard({ roomId }: { roomId: string }) {
       {/* エラー表示 */}
       <ErrorToast />
 
-      {/* 設定モーダル */}
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {/* 設定モーダル（ホストには対局終了ボタンを出す） */}
+      <SettingsModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        isHost={seat === 0}
+        onDissolve={handleDissolve}
+      />
 
       {/* 終局結果（result があれば表示） */}
       <ResultModal
