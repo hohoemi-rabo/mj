@@ -214,6 +214,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
           )}
           <HandTiles
             hand={hand}
+            mySeat={seat}
             legal={legal}
             riichiSelect={riichiSelect}
             helpMode={helpMode}

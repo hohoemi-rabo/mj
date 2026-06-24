@@ -6,6 +6,7 @@
 import { type PlayerState } from "@/lib/mahjong/state";
 import { type PlayerInfo } from "@/lib/adapter/types";
 import { Tile } from "@/components/game/Tile";
+import { meldDisplayTiles } from "@/components/game/meldDisplay";
 import { windLabel } from "@/components/game/labels";
 import { cn } from "@/lib/cn";
 
@@ -72,16 +73,29 @@ export function OpponentArea({ player, info, isCurrent, position }: OpponentArea
         </div>
       )}
 
-      {/* 鳴き（公開情報・face-up）。読みやすさ優先で常に横並び。 */}
+      {/* 鳴き（公開情報・face-up）。読みやすさ優先で常に横並び。
+          鳴いた相手の方角に応じて1枚を90°回転＝伝統的な並び。viewer は鳴いた本人(player.seat)。 */}
       {player.hand.melds.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          {player.hand.melds.map((m, mi) => (
-            <div key={mi} className="flex gap-0.5">
-              {m.tiles.map((t, ti) => (
-                <Tile key={ti} tile={t} size="sm" />
-              ))}
-            </div>
-          ))}
+          {player.hand.melds.map((m, mi) => {
+            const display = meldDisplayTiles(m, player.seat);
+            return (
+              <div key={mi} className="flex items-end gap-0.5">
+                {display.map(({ tile, rotated }, ti) =>
+                  rotated ? (
+                    <div
+                      key={ti}
+                      className="flex h-[30px] w-[40px] items-center justify-center"
+                    >
+                      <Tile tile={tile} size="sm" rotated />
+                    </div>
+                  ) : (
+                    <Tile key={ti} tile={tile} size="sm" />
+                  ),
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

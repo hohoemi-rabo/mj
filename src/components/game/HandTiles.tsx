@@ -6,13 +6,16 @@
 // 自手番のときは手牌全体を amber 枠で囲み、ツモ牌は「ツモ」ラベル＋ring で強調（初心者向け・お助け非依存の基本UI）。
 
 import { type Hand } from "@/lib/mahjong/hand";
-import { type LegalActions } from "@/lib/mahjong/state";
+import { type LegalActions, type Seat } from "@/lib/mahjong/state";
 import { type Tile as TileType } from "@/lib/mahjong/tiles";
 import { Tile, type TileHighlight } from "@/components/game/Tile";
+import { meldDisplayTiles } from "@/components/game/meldDisplay";
 import { cn } from "@/lib/cn";
 
 export interface HandTilesProps {
   hand: Hand;
+  /** 自席（鳴き表示の方角計算に使う）。 */
+  mySeat: Seat;
   legal: LegalActions | null;
   riichiSelect: boolean;
   helpMode: boolean;
@@ -22,6 +25,7 @@ export interface HandTilesProps {
 
 export function HandTiles({
   hand,
+  mySeat,
   legal,
   riichiSelect,
   helpMode,
@@ -80,16 +84,29 @@ export function HandTiles({
         </div>
       )}
 
-      {/* 鳴き（face-up・選択不可） */}
+      {/* 鳴き（face-up・選択不可）。鳴いた相手の方角に応じて1枚を90°回転＝伝統的な並び。
+          回転牌は size=md の box が 60w×45h に入れ替わるので、items-end でほかの直立牌(60h)と底揃え。 */}
       {hand.melds.length > 0 && (
         <div className="ml-4 flex items-end gap-1">
-          {hand.melds.map((m, mi) => (
-            <div key={mi} className="flex gap-0.5">
-              {m.tiles.map((t, ti) => (
-                <Tile key={ti} tile={t} size="md" />
-              ))}
-            </div>
-          ))}
+          {hand.melds.map((m, mi) => {
+            const display = meldDisplayTiles(m, mySeat);
+            return (
+              <div key={mi} className="flex items-end gap-0.5">
+                {display.map(({ tile, rotated }, ti) =>
+                  rotated ? (
+                    <div
+                      key={ti}
+                      className="flex h-[45px] w-[60px] items-center justify-center"
+                    >
+                      <Tile tile={tile} size="md" rotated />
+                    </div>
+                  ) : (
+                    <Tile key={ti} tile={tile} size="md" />
+                  ),
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
