@@ -8,7 +8,7 @@ import { useState } from "react";
 import { type LegalActions, type Seat } from "@/lib/mahjong/state";
 import { type Tile as TileType } from "@/lib/mahjong/tiles";
 import { type PlayerAction } from "@/lib/adapter/types";
-import { Button, ConfirmDialog, Term } from "@/components/ui";
+import { Button, ConfirmDialog } from "@/components/ui";
 import { ChiOptionPicker } from "@/components/game/ChiOptionPicker";
 import { KanTilePicker, type KanCandidate } from "@/components/game/KanTilePicker";
 
@@ -59,48 +59,51 @@ export function ActionButtons({
   };
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
+    // 手牌の右側に縦並びで配置（GameBoard 行4 に統合）。
+    // 横並び wrap だと自手牌の下に行が増え、シニアのノートPCで下端が画面外スクロール送りになる。
+    <div className="flex flex-col items-stretch gap-2">
+      {/* popup 内はコンパクトに語のみ表示（カッコ補足は通常 UI でのみ）。 */}
       {/* --- 自手番 --- */}
       {legal.canTsumo && (
         <Button variant="primary" size="lg" className={pulse} onClick={() => setTsumoOpen(true)}>
-          <Term word="ツモ" hint="自分で引いてアガリ" />
+          ツモ
         </Button>
       )}
       {legal.riichiDiscards.length > 0 && (
         <Button variant="primary" size="lg" className={pulse} onClick={onRiichiStart}>
-          <Term word="リーチ" hint="あと1枚で完成・宣言" />
+          リーチ
         </Button>
       )}
       {kanCandidates.length > 0 && (
         <Button variant="secondary" size="lg" onClick={onSelfKan}>
-          <Term word="カン" hint="同じ牌4枚" />
+          カン
         </Button>
       )}
 
       {/* --- 鳴き応答 --- */}
       {legal.canRon && (
         <Button variant="primary" size="lg" className={pulse} onClick={() => setRonOpen(true)}>
-          <Term word="ロン" hint="人の牌でアガリ" />
+          ロン
         </Button>
       )}
       {legal.canPon && (
         <Button variant="secondary" size="lg" className={pulse} onClick={() => onAction({ type: "pon", seat })}>
-          <Term word="ポン" hint="同じ牌2枚で3枚にする" />
+          ポン
         </Button>
       )}
       {legal.chiOptions.length > 0 && (
         <Button variant="secondary" size="lg" className={pulse} onClick={onChi}>
-          <Term word="チー" hint="数の並びを作る" />
+          チー
         </Button>
       )}
       {legal.canMinkan && (
         <Button variant="secondary" size="lg" className={pulse} onClick={() => onAction({ type: "minkan", seat })}>
-          <Term word="カン" hint="同じ牌4枚" />
+          カン
         </Button>
       )}
       {legal.canPass && (
         <Button variant="secondary" size="lg" onClick={() => onAction({ type: "pass", seat })}>
-          <Term word="パス" hint="鳴かない" />
+          パス
         </Button>
       )}
 

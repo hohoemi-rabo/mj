@@ -120,6 +120,21 @@ export function GameBoard({ roomId }: { roomId: string }) {
   const nameOf = (s: Seat) =>
     infoOf(s)?.name ?? `${windLabel(gameState.players[s].seatWind)}家`;
 
+  // popup を出すかどうか。legal.discards だけ（自手番の通常打牌）では popup を出さない
+  // ＝ボタンが描かれず赤い空カードが残るのを防ぐ。
+  const showActionPopup =
+    riichiSelect ||
+    (legal !== null &&
+      (legal.canTsumo ||
+        legal.canRon ||
+        legal.canPon ||
+        legal.canMinkan ||
+        legal.canPass ||
+        legal.riichiDiscards.length > 0 ||
+        legal.chiOptions.length > 0 ||
+        legal.ankanTiles.length > 0 ||
+        legal.kakanTiles.length > 0));
+
   const backToTitle = () => {
     useGameStore.getState().disconnect();
     router.push("/");
@@ -157,7 +172,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
     <ScreenContainer showRotateHint className="bg-[#1f1611] text-white">
       <div
         data-room-id={roomId}
-        className="grid min-h-[82dvh] grid-cols-[auto_1fr_auto] grid-rows-[auto_auto_1fr_auto_auto] gap-2"
+        className="grid min-h-[82dvh] grid-cols-[auto_1fr_auto] grid-rows-[auto_auto_1fr_auto] gap-2"
       >
         {/* 卓フェルト背景: 対面・上家/下家・河・自手牌が乗る面 (行2-4)。
             外枠=木目フチ(p-2=8px)、内側=フェルト面+inset shadow(凹み感)。
@@ -199,16 +214,27 @@ export function GameBoard({ roomId }: { roomId: string }) {
           {opponent(rightSeat, "right")}
         </div>
 
-        {/* 自手牌（お助け: 上に聴牌通知、下に成立しうる役）。
-            col-start-1 を明示しないと、felt の row-span が行4を埋めてる扱いになり
+        {/* 自手牌＋操作ボタン（お助け: 上に聴牌通知/リーチ案内、下に成立しうる役）。
+            操作ボタンは横並び wrap で自手牌の下にあったが、シニアのノートPCで縦が足りず
+            鳴きボタンが画面外スクロール送りになる事故が起きたので、手牌の右に縦並びで配置。
+            col-start-1 を明示しないと felt の row-span が行4を埋めてる扱いになり、
             auto-placement が暗黙列を右に作って卓外にはみ出す。
             pb-5 で YakuBadges が felt の下辺の木目フチに被るのを防ぐ。 */}
         <div className="relative z-10 col-span-3 col-start-1 row-start-4 flex flex-col items-center gap-2 px-4 pb-5">
-          {helpMode && (
-            <div className="min-h-[1.5rem]">
-              <TenpaiNotice hand={hand} />
-            </div>
-          )}
+          {/* 上の案内行（riichi-select 中はリーチ案内、それ以外でお助けONなら聴牌通知）。
+              同時には出ないので排他。スロットは常に確保してジャンプを防ぐ。 */}
+          <div className="min-h-[1.5rem]">
+            {riichiSelect ? (
+              <span className="text-base font-bold text-amber-400">
+                リーチする牌を選んでください
+              </span>
+            ) : (
+              helpMode && <TenpaiNotice hand={hand} />
+            )}
+          </div>
+
+          {/* 手牌は中央に置く。操作エリアは flex の流れに入れず、絶対配置で手牌の真上に
+              浮かせる（=layout を一切動かさない・スクロール問題が再発しない）。 */}
           <HandTiles
             hand={hand}
             mySeat={seat}
@@ -218,29 +244,34 @@ export function GameBoard({ roomId }: { roomId: string }) {
             tenpaiKeep={tenpaiKeep}
             onTileClick={onTileClick}
           />
-          {helpMode && <YakuBadges names={possibleYaku} />}
-        </div>
 
-        {/* 操作ボタン */}
-        <div className="relative z-10 col-span-3 row-start-5 flex min-h-tap flex-wrap items-center justify-center gap-3">
-          {riichiSelect ? (
-            <>
-              <span className="text-base font-bold">リーチする牌を選んでください</span>
-              <Button variant="secondary" size="lg" onClick={() => setRiichiSelect(false)}>
-                リーチをやめる
-              </Button>
-            </>
-          ) : (
-            legal && (
-              <ActionButtons
-                legal={legal}
-                seat={seat}
-                lastDiscardTile={gameState.lastDiscard?.tile ?? null}
-                helpMode={helpMode}
-                onAction={send}
-                onRiichiStart={() => setRiichiSelect(true)}
-              />
-            )
+          {helpMode && <YakuBadges names={possibleYaku} />}
+
+          {/* 操作ポップアップ: 親(row-4 wrapper)に対して absolute。
+              bottom: calc(100% + 8px) で手牌領域のすぐ上、felt の下方に浮かせる。
+              left-1/2 + -translate-x-1/2 で水平中央。z-30 で felt 上の要素より前面。
+              showActionPopup で実際にボタンが出る場合のみ描画（空赤カードの残り防止）。 */}
+          {showActionPopup && (
+            <div className="pointer-events-auto absolute bottom-[calc(100%+8px)] left-1/2 z-30 -translate-x-1/2">
+              <div className="flex flex-col items-stretch gap-2 rounded-2xl bg-danger p-3 shadow-2xl">
+                {riichiSelect ? (
+                  <Button variant="secondary" size="lg" onClick={() => setRiichiSelect(false)}>
+                    やめる
+                  </Button>
+                ) : (
+                  legal && (
+                    <ActionButtons
+                      legal={legal}
+                      seat={seat}
+                      lastDiscardTile={gameState.lastDiscard?.tile ?? null}
+                      helpMode={helpMode}
+                      onAction={send}
+                      onRiichiStart={() => setRiichiSelect(true)}
+                    />
+                  )
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
