@@ -60,8 +60,8 @@ export function HandTiles({
 
   return (
     <div className="flex items-end justify-center gap-1">
-      {/* 純手牌 */}
-      <div className="flex items-end gap-0.5">
+      {/* 純手牌（牌同士は隙間なしで詰める＝伝統的な手牌の見た目） */}
+      <div className="flex items-end">
         {hand.concealed.map((t, i) => renderTile(t, `c${i}`))}
       </div>
 
@@ -84,7 +84,7 @@ export function HandTiles({
           {hand.melds.map((m, mi) => {
             const display = meldDisplayTiles(m, mySeat);
             return (
-              <div key={mi} className="flex items-end gap-0.5">
+              <div key={mi} className="flex items-end">
                 {display.map(({ tile, rotated }, ti) =>
                   rotated ? (
                     <div

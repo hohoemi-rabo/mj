@@ -74,6 +74,7 @@ export function Tile({
   if (!selectable) return img;
 
   // tap 可能なときは 60px タップ域・focus ring・aria-label を持つ <button> でラップ。
+  // 牌同士を詰めるため padding は付けない（min-h-tap/min-w-tap で 60px タップ域は確保）。
   return (
     <button
       type="button"
@@ -81,7 +82,7 @@ export function Tile({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-tap min-w-tap items-center justify-center rounded-lg p-1",
+        "inline-flex min-h-tap min-w-tap items-center justify-center rounded-lg",
         "transition-transform hover:-translate-y-1 active:scale-95",
         "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary",
         disabled && "cursor-not-allowed hover:translate-y-0 active:scale-100",

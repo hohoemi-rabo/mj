@@ -29,9 +29,10 @@ export function OpponentArea({ player, position }: OpponentAreaProps) {
         </span>
       )}
 
-      {/* 裏向き手牌（枚数だけ）。上家/下家は縦並び＋90°回転、対面は横並び折返し。 */}
+      {/* 裏向き手牌（枚数だけ）。上家/下家は縦並び＋90°回転、対面は横並び折返し。
+          牌同士は隙間なしで詰める＝伝統的な手牌の見た目。 */}
       {isSide ? (
-        <div className="flex flex-col items-center gap-0.5">
+        <div className="flex flex-col items-center">
           {backs.map((_, i) => (
             <div key={i} className="flex h-[30px] w-[40px] items-center justify-center">
               <Tile faceDown size="sm" rotated />
@@ -39,7 +40,7 @@ export function OpponentArea({ player, position }: OpponentAreaProps) {
           ))}
         </div>
       ) : (
-        <div className="flex max-w-[460px] flex-wrap gap-0.5">
+        <div className="flex max-w-[460px] flex-wrap">
           {backs.map((_, i) => (
             <Tile key={i} faceDown size="sm" />
           ))}
@@ -53,7 +54,7 @@ export function OpponentArea({ player, position }: OpponentAreaProps) {
           {player.hand.melds.map((m, mi) => {
             const display = meldDisplayTiles(m, player.seat);
             return (
-              <div key={mi} className="flex items-end gap-0.5">
+              <div key={mi} className="flex items-end">
                 {display.map(({ tile, rotated }, ti) =>
                   rotated ? (
                     <div
