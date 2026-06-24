@@ -17,7 +17,7 @@ const memoryStorage = (): StateStorage => {
 
 export interface SettingsStore {
   helpMode: boolean; // お助けモード（既定 ON）
-  volume: number; // 0..1（既定 中=0.5）
+  volume: number; // 0..1（既定 MAX=1.0。シニアのノートPCで本体音量を下げ気味でも聞き取れる前提・mp3の素の音量を最大限活かす）
   muted: boolean; // ミュート（既定 false）
   discardConfirm: boolean; // 打牌確認ダイアログ（既定 ON）
   bgmOn: boolean; // BGM 再生（既定 ON。ミュートとは独立に切替可）
@@ -38,7 +38,7 @@ export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
       helpMode: true,
-      volume: 0.5,
+      volume: 1.0,
       muted: false,
       discardConfirm: true,
       bgmOn: true,
@@ -64,6 +64,17 @@ export const useSettingsStore = create<SettingsStore>()(
         discardConfirm: s.discardConfirm,
         bgmOn: s.bgmOn,
       }),
+      // 既存端末は localStorage の古いデフォルト（0.5 → 一時 0.85）を読み続けるので、version up
+      // で MAX=1.0 まで引き上げる。mp3 の素の音量がそもそも控えめなのでクランプ上限まで使う。
+      // ユーザーが SettingsModal で個別調整するのは常時可能。
+      version: 2,
+      migrate: (persisted, fromVersion) => {
+        const state = (persisted as Partial<SettingsStore> | undefined) ?? {};
+        if (fromVersion < 2 && typeof state.volume === "number" && state.volume < 1.0) {
+          return { ...state, volume: 1.0 };
+        }
+        return state;
+      },
     },
   ),
 );

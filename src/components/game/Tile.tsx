@@ -55,26 +55,35 @@ export function Tile({
   const src = faceDown ? TILE_BACK_PATH : tile ? tileImagePath(tile) : TILE_BACK_PATH;
   const label = faceDown ? "" : (ariaLabel ?? (tile ? tileName(tile) : ""));
 
-  const img = (
-    // 牌は固定寸法の静的SVG。next/image の最適化は不要（むしろ過剰）なので素の img を使う。
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={label}
-      draggable={false}
+  // 立体感を出すためラッパー <span> で「外側 drop-shadow + 擬似要素 ::after の inset 光/陰」を担う。
+  // ring（HIGHLIGHT_CLASSES）は <img> 側に残す＝独自 box-shadow（tile-shadow）と ring の box-shadow が
+  // 同じ要素で衝突するのを避ける。group:hover は wrapper にぶら下がる .tile-shadow を持ち上げる。
+  const node = (
+    <span
       className={cn(
-        "block select-none rounded-md",
+        "tile-shadow inline-block rounded-md",
         SIZE_CLASSES[size],
         rotated && "rotate-90",
-        disabled && "opacity-50",
-        HIGHLIGHT_CLASSES[highlight],
         pulse && "relative z-10 animate-naki-pulse",
         !selectable && className,
       )}
-    />
+    >
+      {/* 牌は固定寸法の静的SVG。next/image の最適化は不要（むしろ過剰）なので素の img を使う。 */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={label}
+        draggable={false}
+        className={cn(
+          "block h-full w-full select-none rounded-md",
+          disabled && "opacity-50",
+          HIGHLIGHT_CLASSES[highlight],
+        )}
+      />
+    </span>
   );
 
-  if (!selectable) return img;
+  if (!selectable) return node;
 
   // tap 可能なときは 60px タップ域・focus ring・aria-label を持つ <button> でラップ。
   // 牌同士を詰めるため padding は付けない（min-h-tap/min-w-tap で 60px タップ域は確保）。
@@ -85,14 +94,15 @@ export function Tile({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex min-h-tap min-w-tap items-center justify-center rounded-lg",
+        // group は子の <span class="tile-shadow"> を hover で持ち上げるための連動キー（globals.css 参照）。
+        "group inline-flex min-h-tap min-w-tap items-center justify-center rounded-lg",
         "transition-transform hover:-translate-y-1 active:scale-95",
         "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary",
         disabled && "cursor-not-allowed hover:translate-y-0 active:scale-100",
         className,
       )}
     >
-      {img}
+      {node}
     </button>
   );
 }
