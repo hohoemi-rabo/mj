@@ -12,10 +12,13 @@ export interface DiscardPileProps {
   discards: readonly Discard[];
   /** 当たり牌集合（お助けON時のみ、他家河に渡す）。 */
   helpHighlight?: ReadonlySet<TileType>;
+  /** 鳴き対象牌（直前の捨て牌）を点滅させる。直前に捨てた家の河だけに渡す。 */
+  pulseLast?: boolean;
   className?: string;
 }
 
-export function DiscardPile({ discards, helpHighlight, className }: DiscardPileProps) {
+export function DiscardPile({ discards, helpHighlight, pulseLast, className }: DiscardPileProps) {
+  const lastIdx = discards.length - 1;
   // 幅は枚数によらず常に 6 列分（30px×6 + 2px×5 gap = 190px）を確保。
   // これがないと RiverGrid 側の auto 列が捨て牌の枚数で伸縮し、左右の捨て牌枚数が違う
   // 1巡目に中央パネルが横にずれる（2巡目以降は枚数差が縮まって見た目には収まる）。
@@ -35,6 +38,7 @@ export function DiscardPile({ discards, helpHighlight, className }: DiscardPileP
             size="sm"
             rotated={d.riichi}
             highlight={helpHighlight?.has(d.tile) ? "wait" : "none"}
+            pulse={pulseLast && i === lastIdx}
           />
         </div>
       ))}

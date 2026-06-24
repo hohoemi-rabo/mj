@@ -18,6 +18,7 @@ export interface TileProps {
   disabled?: boolean; // 合法手でない自手牌（薄く）
   highlight?: TileHighlight; // お助け表示
   rotated?: boolean; // リーチ宣言牌（横向き）
+  pulse?: boolean; // 鳴き対象牌の点滅（色は付けず animate-pulse のみ・色は他のハイライトと衝突しないように）
   onClick?: () => void;
   ariaLabel?: string; // 既定 tileName(tile)
   className?: string;
@@ -46,6 +47,7 @@ export function Tile({
   disabled = false,
   highlight = "none",
   rotated = false,
+  pulse = false,
   onClick,
   ariaLabel,
   className,
@@ -66,6 +68,7 @@ export function Tile({
         rotated && "rotate-90",
         disabled && "opacity-50",
         HIGHLIGHT_CLASSES[highlight],
+        pulse && "relative z-10 animate-naki-pulse",
         !selectable && className,
       )}
     />

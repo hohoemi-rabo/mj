@@ -135,6 +135,15 @@ export function GameBoard({ roomId }: { roomId: string }) {
         legal.ankanTiles.length > 0 ||
         legal.kakanTiles.length > 0));
 
+  // 鳴き対象牌の点滅: ロン/ポン/(大明)カン/チーは「相手の直前捨て牌」に対する応答。
+  // その家の河の最後の1枚を animate-pulse で点滅させて「この牌で鳴ける」を示す。
+  // 色は付けない（お助けONの黄色ハイライトと衝突しないため）。お助け非依存（基本UI）。
+  const canCallNaki =
+    legal !== null &&
+    (legal.canRon || legal.canPon || legal.canMinkan || legal.chiOptions.length > 0);
+  const pulseSeat: Seat | null =
+    canCallNaki && gameState.lastDiscard ? gameState.lastDiscard.seat : null;
+
   const backToTitle = () => {
     useGameStore.getState().disconnect();
     router.push("/");
@@ -186,7 +195,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
 
         {/* 上部バー */}
         <div className="relative z-10 col-span-3 row-start-1">
-          <TopBar gameState={gameState} mySeat={seat} onOpenSettings={() => setSettingsOpen(true)} />
+          <TopBar gameState={gameState} onOpenSettings={() => setSettingsOpen(true)} />
         </div>
 
         {/* 対面（上）。フェルト上に乗るので白文字。mt-4 で上の木目フチから離す。 */}
@@ -205,6 +214,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
             gameState={gameState}
             mySeat={seat}
             helpHighlight={helpMode ? myWaits : null}
+            pulseSeat={pulseSeat}
             center={<CenterPanel gameState={gameState} mySeat={seat} players={players} />}
           />
         </div>

@@ -2,7 +2,7 @@
 
 // 卓中央スコアパネル（Phase 1）。RiverGrid の center スロットに配置。
 // 四方向に各家の「風家・名前(CPU)・点数」、中央に場風＋残り山、現手番の枠を amber ハイライト。
-// Phase 2/5 で OpponentArea ヘッダと TopBar の局情報を整理するため、現状は情報が重複する。
+// OpponentArea ヘッダ（Phase 2）と TopBar の局情報（Phase 5）は撤去済みで、対局情報はここに集約される。
 
 import { type GameState, type Seat, currentSeat } from "@/lib/mahjong/state";
 import { remainingDraws } from "@/lib/mahjong/wall";

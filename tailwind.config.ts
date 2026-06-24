@@ -43,6 +43,17 @@ export default {
       minWidth: {
         tap: "60px",
       },
+      // 鳴き対象牌のハッキリした点滅（Tailwind 標準 animate-pulse は ease で 1↔0.5 をなめらかに振るので
+      // ボヤッとして見える）。steps(1,end) で「カクッと ON/OFF」、scale も同期で振って「ひょこ」感を出す。
+      keyframes: {
+        "naki-pulse": {
+          "0%, 49%": { opacity: "1", transform: "scale(1.08)" },
+          "50%, 100%": { opacity: "0.15", transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "naki-pulse": "naki-pulse 0.8s steps(1, end) infinite",
+      },
     },
   },
   plugins: [],

@@ -1,37 +1,27 @@
 "use client";
 
-// 上部バー（docs/14 §3.7）。局情報（場風/自風/ドラ/残ツモ）＋お助けToggle＋設定ボタン。
+// 上部バー（docs/14 §3.7）。ドラ表示＋お助けToggle＋設定ボタン。
+// 場風/自風/残り山は CenterPanel に集約済みなので冗長分は持たない（UI集約リワーク Phase 5）。
 
 import { useMemo } from "react";
 import { Settings } from "lucide-react";
-import { type GameState, type Seat, doraTiles } from "@/lib/mahjong/state";
-import { remainingDraws } from "@/lib/mahjong/wall";
+import { type GameState, doraTiles } from "@/lib/mahjong/state";
 import { Toggle } from "@/components/ui";
 import { Tile } from "@/components/game/Tile";
-import { windLabel } from "@/components/game/labels";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 
 export interface TopBarProps {
   gameState: GameState;
-  mySeat: Seat;
   onOpenSettings: () => void;
 }
 
-export function TopBar({ gameState, mySeat, onOpenSettings }: TopBarProps) {
+export function TopBar({ gameState, onOpenSettings }: TopBarProps) {
   const dora = useMemo(() => doraTiles(gameState), [gameState]);
-  const remaining = remainingDraws(gameState.wall);
   const helpMode = useSettingsStore((s) => s.helpMode);
   const toggleHelpMode = useSettingsStore((s) => s.toggleHelpMode);
-  const myWind = gameState.players[mySeat].seatWind;
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-gray-100 px-3 py-2 dark:bg-gray-800">
-      <div className="flex items-center gap-3 text-base">
-        <span className="font-bold">場 {windLabel(gameState.roundWind)}</span>
-        <span className="font-bold">自風 {windLabel(myWind)}</span>
-        <span className="tabular-nums">残り {remaining}</span>
-      </div>
-
       <div className="flex items-center gap-1">
         <span className="text-sm">ドラ</span>
         {dora.map((t, i) => (
