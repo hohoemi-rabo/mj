@@ -23,6 +23,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { Button, ConfirmDialog, Heading, ScreenContainer } from "@/components/ui";
 import { TopBar } from "@/components/game/TopBar";
 import { OpponentArea } from "@/components/game/OpponentArea";
+import { CenterPanel } from "@/components/game/CenterPanel";
 import { RiverGrid } from "@/components/game/RiverGrid";
 import { HandTiles } from "@/components/game/HandTiles";
 import { ActionButtons } from "@/components/game/ActionButtons";
@@ -188,12 +189,13 @@ export function GameBoard({ roomId }: { roomId: string }) {
           {opponent(leftSeat, "left")}
         </div>
 
-        {/* 中央の河 */}
+        {/* 中央の河（中央スロットにスコアパネルを乗せる: Phase 1） */}
         <div className="relative z-10 col-start-2 row-start-3">
           <RiverGrid
             gameState={gameState}
             mySeat={seat}
             helpHighlight={helpMode ? myWaits : null}
+            center={<CenterPanel gameState={gameState} mySeat={seat} players={players} />}
           />
         </div>
 
