@@ -37,7 +37,7 @@ function PlayerCell({
         isCurrent ? "bg-amber-400/30 ring-2 ring-amber-400" : "",
       )}
     >
-      <div className="text-sm font-bold">{windLabel(player.seatWind)}家</div>
+      <div className="text-sm font-bold">{windLabel(player.seatWind)}</div>
       <div className="flex items-center gap-1 text-xs">
         <span className="max-w-[80px] truncate">{name}</span>
         {info?.isCpu && (
