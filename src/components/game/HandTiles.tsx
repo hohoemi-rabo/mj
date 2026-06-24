@@ -3,14 +3,13 @@
 // 自分の手牌（docs/14 §3.3）。concealed＋drawn（ツモ牌は離して表示）＋melds（face-up）。
 // tap 可否は合法手駆動: 通常は discards、リーチselect中は riichiDiscards のみ。お助けで強調。
 // 実際の打牌確認/送信は GameBoard（onTileClick で通知）。
-// 自手番のときは手牌全体を amber 枠で囲み、ツモ牌は「ツモ」ラベル＋ring で強調（初心者向け・お助け非依存の基本UI）。
+// 自手番のハイライトは CenterPanel に集約。ここではツモ牌のみ「ツモ」ラベル＋ring で強調（初心者向け）。
 
 import { type Hand } from "@/lib/mahjong/hand";
 import { type LegalActions, type Seat } from "@/lib/mahjong/state";
 import { type Tile as TileType } from "@/lib/mahjong/tiles";
 import { Tile, type TileHighlight } from "@/components/game/Tile";
 import { meldDisplayTiles } from "@/components/game/meldDisplay";
-import { cn } from "@/lib/cn";
 
 export interface HandTilesProps {
   hand: Hand;
@@ -60,13 +59,7 @@ export function HandTiles({
   };
 
   return (
-    <div
-      className={cn(
-        "flex items-end justify-center gap-1 rounded-2xl border-4 p-2 transition-colors",
-        // 自手番=黄色枠＋淡背景で「あなたの番です」を明示。非手番時も同寸の transparent 枠を残しレイアウト維持。
-        isMyDiscardTurn ? "border-amber-400 bg-amber-400/10" : "border-transparent",
-      )}
-    >
+    <div className="flex items-end justify-center gap-1">
       {/* 純手牌 */}
       <div className="flex items-end gap-0.5">
         {hand.concealed.map((t, i) => renderTile(t, `c${i}`))}

@@ -150,12 +150,7 @@ export function GameBoard({ roomId }: { roomId: string }) {
     discardTarget && helpMode ? waitsAfterDiscard(hand, discardTarget) : [];
 
   const opponent = (s: Seat, position: "top" | "left" | "right") => (
-    <OpponentArea
-      player={gameState.players[s]}
-      info={infoOf(s)}
-      isCurrent={current === s}
-      position={position}
-    />
+    <OpponentArea player={gameState.players[s]} position={position} />
   );
 
   return (
