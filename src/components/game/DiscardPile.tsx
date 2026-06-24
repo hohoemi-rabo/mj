@@ -16,8 +16,11 @@ export interface DiscardPileProps {
 }
 
 export function DiscardPile({ discards, helpHighlight, className }: DiscardPileProps) {
+  // 幅は枚数によらず常に 6 列分（30px×6 + 2px×5 gap = 190px）を確保。
+  // これがないと RiverGrid 側の auto 列が捨て牌の枚数で伸縮し、左右の捨て牌枚数が違う
+  // 1巡目に中央パネルが横にずれる（2巡目以降は枚数差が縮まって見た目には収まる）。
   return (
-    <div className={cn("grid grid-cols-6 gap-0.5", className)}>
+    <div className={cn("grid grid-cols-6 gap-0.5 min-w-[190px]", className)}>
       {discards.map((d, i) => (
         <div
           key={i}
