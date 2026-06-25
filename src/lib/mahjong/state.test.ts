@@ -242,6 +242,110 @@ describe("リーチ宣言", () => {
   });
 });
 
+describe("リーチ後は手牌を変えられない", () => {
+  // 共通：seat0 リーチ済 + ドロー後（drawn=z6）状態
+  const setupRiichiAfterDraw = (): GameState => {
+    const base = createInitialState(1, { dealer: 0 });
+    const tiles: Tile[] = [
+      "m2", "m3", "m4", "p3", "p4", "p5", "s6", "s7", "s8", "p7", "p7", "m6", "m7",
+    ];
+    const hand0: Hand = { ...mkHand(tiles, "z6"), riichi: true };
+    const s = withHands(base, {
+      0: hand0,
+      1: createHand(HONOR_HAND),
+      2: createHand(HONOR_HAND),
+      3: createHand(HONOR_HAND),
+    });
+    return atDiscard(s, 0);
+  };
+
+  it("リーチ済はツモ切り（drawn）のみが合法打牌", () => {
+    const s = setupRiichiAfterDraw();
+    const la = legalActions(s, 0);
+    expect(la.discards).toEqual(["z6"]); // drawn 以外は出ない
+    expect(la.riichiDiscards).toEqual([]); // 再リーチ不可
+    expect(la.ankanTiles).toEqual([]); // 暗槓不可
+    expect(la.kakanTiles).toEqual([]); // 加槓不可
+  });
+
+  it("リーチ済が手出し（drawn以外の牌）を試みても no-op", () => {
+    const s = setupRiichiAfterDraw();
+    const after = reducer(s, { type: "discard", seat: 0, tile: "m2" });
+    expect(after).toBe(s); // 状態不変＝拒否
+  });
+
+  it("リーチ済が再リーチを試みても no-op", () => {
+    const s = setupRiichiAfterDraw();
+    const after = reducer(s, { type: "discard", seat: 0, tile: "z6", riichi: true });
+    expect(after).toBe(s);
+  });
+
+  it("リーチ済が暗槓を試みても no-op（手に4枚あっても）", () => {
+    const base = createInitialState(1, { dealer: 0 });
+    // 手に z5×4 を含む状態でリーチ済
+    const tiles: Tile[] = [
+      "m1", "m2", "m3", "m4", "m5", "m6", "p1", "p2", "p3", "z5", "z5", "z5", "z5",
+    ];
+    const hand0: Hand = { ...mkHand(tiles, "p4"), riichi: true };
+    const sBase = withHands(base, {
+      0: hand0,
+      1: createHand(HONOR_HAND),
+      2: createHand(HONOR_HAND),
+      3: createHand(HONOR_HAND),
+    });
+    const s = atDiscard(sBase, 0);
+    expect(legalActions(s, 0).ankanTiles).toEqual([]);
+    const after = reducer(s, { type: "ankan", seat: 0, tile: "z5" });
+    expect(after).toBe(s);
+  });
+});
+
+describe("リーチ後の鳴き禁止", () => {
+  it("リーチ済プレイヤーには pon/chi/minkan の選択肢が出ない（ロン以外不可）", () => {
+    const base = createInitialState(1, { dealer: 0 });
+    // seat 0: ポン候補（m5×2）もチー候補（m4,m6）もある形 + リーチ済
+    const hand0Tiles: Tile[] = [
+      "m4", "m5", "m5", "m6", "p1", "p2", "p3", "s1", "s2", "s3", "z5", "z6", "z7",
+    ];
+    const hand0: Hand = { ...createHand(hand0Tiles), riichi: true };
+    const sBase = withHands(base, {
+      0: hand0,
+      1: createHand(HONOR_HAND),
+      2: createHand(HONOR_HAND),
+      3: mkHand(HONOR_HAND.slice(0, 13) as Tile[], "m5"),
+    });
+    // ロン誤判定の影響を切り離すため、seat0 はリーチフリテンとして扱う
+    const s: GameState = {
+      ...atDiscard(sBase, 3),
+      riichiFuriten: [true, false, false, false],
+    };
+    const after = reducer(s, { type: "discard", seat: 3, tile: "m5" });
+    // seat 0 はリーチ済 → 鳴き不可、リーチフリテン → ロン不可。
+    // 他家(HONOR_HAND)も鳴き不可なのでクレーム窓は開かず進行する。
+    expect(after.phase.kind).toBe("awaiting-draw");
+  });
+
+  it("リーチ済プレイヤーにはチー対象牌でも chiOptions が空になる", () => {
+    const base = createInitialState(1, { dealer: 0 });
+    // seat 0: チー候補（m4,m6）あり + リーチ済。ポン候補なし、ロン形でもない。
+    const hand0Tiles: Tile[] = [
+      "m4", "m6", "p1", "p2", "p3", "s1", "s2", "s3", "z1", "z2", "z3", "z5", "z6",
+    ];
+    const hand0: Hand = { ...createHand(hand0Tiles), riichi: true };
+    // seat 3 が discardSeat。next(3)=0 なので seat 0 がチー対象席。
+    const sBase = withHands(base, {
+      0: hand0,
+      1: createHand(HONOR_HAND),
+      2: createHand(HONOR_HAND),
+      3: mkHand(HONOR_HAND.slice(0, 13) as Tile[], "m5"),
+    });
+    const s = atDiscard(sBase, 3);
+    const after = reducer(s, { type: "discard", seat: 3, tile: "m5" });
+    // 誰も鳴けない・誰もロンできない → クレーム窓は開かない
+    expect(after.phase.kind).toBe("awaiting-draw");
+  });
+});
+
 describe("流局のテンパイ料", () => {
   it("2人テンパイ→各+1500 / 2人ノーテン→各-1500", () => {
     const base = createInitialState(1, { dealer: 0 });

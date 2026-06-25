@@ -408,9 +408,12 @@ const openClaimWindow = (state: GameState, discardSeat: Seat, tile: Tile): GameS
     if (seat === discardSeat) continue;
     const hand = state.players[seat].hand;
     const canRon = canRonTile(state, seat, tile);
-    const canPon = canCallPon(hand, tile);
-    const canMinkan = canCallMinkan(hand, tile);
-    const chiOptions = seat === next(discardSeat) ? chiOptionsFor(hand, tile) : [];
+    // リーチ後は手牌を変えられないため、ポン・チー・大明槓は不可（ロンのみ）。
+    const canPon = !hand.riichi && canCallPon(hand, tile);
+    const canMinkan = !hand.riichi && canCallMinkan(hand, tile);
+    const chiOptions = !hand.riichi && seat === next(discardSeat)
+      ? chiOptionsFor(hand, tile)
+      : [];
     if (canRon || canPon || canMinkan || chiOptions.length > 0) {
       eligible.push({ seat, canRon, canPon, canMinkan, chiOptions });
     }
