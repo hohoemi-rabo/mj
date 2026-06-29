@@ -180,6 +180,7 @@ export const canCallPon = (hand: Hand, tile: Tile): boolean =>
 
 /** ポン。同種2枚を消費して明刻を作る。次は呼び出し側が打牌する。 */
 export const callPon = (hand: Hand, tile: Tile, from: number): Hand => {
+  if (hand.riichi) throw new Error("callPon: リーチ後はポンできません");
   if (hand.drawn !== null) throw new Error("callPon: ツモ牌がある状態ではポンできません");
   if (countOf(hand.concealed, tile) < 2) throw new Error(`callPon: ${tile} が2枚ありません`);
   return {
@@ -216,6 +217,7 @@ export const callChi = (
   from: number,
   twoFromHand: readonly [Tile, Tile],
 ): Hand => {
+  if (hand.riichi) throw new Error("callChi: リーチ後はチーできません");
   if (hand.drawn !== null) throw new Error("callChi: ツモ牌がある状態ではチーできません");
   if (!isValidChi(tile, twoFromHand)) {
     throw new Error(`callChi: ${twoFromHand.join(",")} と ${tile} は順子になりません`);
@@ -237,6 +239,7 @@ export const canCallMinkan = (hand: Hand, tile: Tile): boolean =>
 
 /** 大明槓。手中3枚＋鳴いた牌でカンを作る。嶺上ツモは呼び出し側（#08）が行う。 */
 export const callMinkan = (hand: Hand, tile: Tile, from: number): Hand => {
+  if (hand.riichi) throw new Error("callMinkan: リーチ後は大明槓できません");
   if (hand.drawn !== null) throw new Error("callMinkan: ツモ牌がある状態では大明槓できません");
   if (countOf(hand.concealed, tile) < 3) throw new Error(`callMinkan: ${tile} が3枚ありません`);
   return {

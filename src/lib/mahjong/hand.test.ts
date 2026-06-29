@@ -153,6 +153,11 @@ describe("callPon", () => {
     expect(canCallPon(h, "p5")).toBe(false);
     expect(() => callPon(h, "p5", 1)).toThrow();
   });
+
+  it("リーチ後は throw（安全網）", () => {
+    const h: Hand = { ...freshHand(), riichi: true };
+    expect(() => callPon(h, "p5", 1)).toThrow(/リーチ後/);
+  });
 });
 
 describe("callChi", () => {
@@ -188,6 +193,11 @@ describe("callChi", () => {
     expect(canCallChi(h, "s9", ["s7", "s8"])).toBe(false);
     expect(() => callChi(h, "s9", 3, ["s7", "s8"])).toThrow();
   });
+
+  it("リーチ後は throw（安全網）", () => {
+    const h: Hand = { ...freshHand(), riichi: true };
+    expect(() => callChi(h, "s9", 3, ["s7", "s8"])).toThrow(/リーチ後/);
+  });
 });
 
 describe("callMinkan（大明槓）", () => {
@@ -208,6 +218,11 @@ describe("callMinkan（大明槓）", () => {
     const h = freshHand(); // p5 は2枚
     expect(canCallMinkan(h, "p5")).toBe(false);
     expect(() => callMinkan(h, "p5", 0)).toThrow();
+  });
+
+  it("リーチ後は throw（安全網）", () => {
+    const h: Hand = { ...createHand(threeP5), riichi: true };
+    expect(() => callMinkan(h, "p5", 0)).toThrow(/リーチ後/);
   });
 });
 
